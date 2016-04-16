@@ -13,7 +13,7 @@ public class LivingEntity : MonoBehaviour, IDamageable {
 		health = startingHealth;
 	}
 
-	public void TakeHit(float damage, RaycastHit hit){
+    public void TakeHit(float damage, RaycastHit hit){
 		//TODO: Some stuffs with hit
 		TakeDamage(damage);
 	}
