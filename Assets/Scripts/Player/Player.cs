@@ -61,10 +61,12 @@ public class Player : LivingEntity {
     	bool boolean = RectTransformUtility.RectangleContainsScreenPoint(aimJoystickRect, Input.mousePosition);
     	switch(swipeControl.GetSwipeDirection()){
     	case SwipeControls.SwipeDirection.Right:
-			transform.Rotate(new Vector3(0f,90f,0f));
+			controller.Rotate(new Vector3(0f,90f,0f));
+			//transform.Rotate(new Vector3(0f,90f,0f));
 			break;
     	case SwipeControls.SwipeDirection.Left:
-			transform.Rotate(new Vector3(0f,-90f,0f));
+			controller.Rotate(new Vector3(0f,-90f,0f));
+			//transform.Rotate(new Vector3(0f,-90f,0f));
 			break;
     	}
     }
