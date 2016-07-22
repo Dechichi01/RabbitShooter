@@ -12,14 +12,17 @@ public class Player : LivingEntity {
 	Camera viewCamera;
     public Joystick rotateJoyStick;
     public RectTransform aimJoystickRect;
-    private SwipeControls swipeControl;
+    private SwipeDetector swipeControl;
     Vector3 aimVelocity;
+
+    private Transform currentVisibleTarget;
+    private Transform lastVisibleTarget;
 
 	override protected void Start () {
 		base.Start();
 		controller = GetComponent<PlayerController>();
 		gunController = GetComponent<GunController>();
-		swipeControl = GetComponent<SwipeControls>();
+		swipeControl = GetComponent<SwipeDetector>();
 		viewCamera = Camera.main;
 	}
 
@@ -28,6 +31,10 @@ public class Player : LivingEntity {
 		GetInputAndMove ();
         //GetInputAndRotate();
         GetSwipeAndAim();
+
+        if (swipeControl.GetSwipeDirection() == SwipeDetector.SwipeDirection.Shoot)
+            gunController.Shoot();
+           
 
 		//GetInputAndLook (); 
 
@@ -57,17 +64,19 @@ public class Player : LivingEntity {
 
     void GetSwipeAndAim()
     {
-    	Vector2 point;
-    	bool boolean = RectTransformUtility.RectangleContainsScreenPoint(aimJoystickRect, Input.mousePosition);
-    	switch(swipeControl.GetSwipeDirection()){
-    	case SwipeControls.SwipeDirection.Right:
+    	switch(swipeControl.GetSwipeDirection())
+        {
+    	case SwipeDetector.SwipeDirection.Right:
 			controller.Rotate(new Vector3(0f,90f,0f));
 			//transform.Rotate(new Vector3(0f,90f,0f));
 			break;
-    	case SwipeControls.SwipeDirection.Left:
+    	case SwipeDetector.SwipeDirection.Left:
 			controller.Rotate(new Vector3(0f,-90f,0f));
 			//transform.Rotate(new Vector3(0f,-90f,0f));
 			break;
+        case SwipeDetector.SwipeDirection.Shoot:
+            gunController.Shoot();
+            break;
     	}
     }
 
