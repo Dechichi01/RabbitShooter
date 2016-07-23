@@ -13,6 +13,8 @@ public class Enemy : LivingEntity {
 
 	Color originalColour;
 
+    public ParticleSystem deathEffect;
+
 	float damage = 1f;
 
 	float attackDistanceThreshold = .5f;
@@ -58,7 +60,16 @@ public class Enemy : LivingEntity {
 		}
 	}
 
-	void OnTargetDeath(){
+    public override void TakeHit(float damage, Vector3 hitPoint, Vector3 hitDirection)
+    {
+        if (damage >= health)
+        {
+            Destroy(Instantiate(deathEffect.gameObject, hitPoint, Quaternion.FromToRotation(Vector3.forward,hitDirection)) as GameObject, deathEffect.startLifetime);
+        }
+        base.TakeHit(damage, hitPoint, hitDirection);
+    }
+
+    void OnTargetDeath(){
 		hasTarget = false;
         targetLivingEntity.OnDeath -= OnTargetDeath;//Good practice to unsubscribe from a method
 		currentState = State.Idle;
