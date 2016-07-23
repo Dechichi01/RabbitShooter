@@ -16,10 +16,20 @@ public class CameraController : MonoBehaviour {
 
     private Vector3 smoothVelocity;
 
+    LivingEntity targetLivingEntity;
+    private bool hasTarget;
+
     bool isTranslating;
 	// Use this for initialization
 	void Start () {
         playerT = GameObject.FindWithTag("Player").GetComponent<Transform>();
+        if (playerT != null)
+        {
+            hasTarget = true;
+            targetLivingEntity = playerT.GetComponent<LivingEntity>();
+            targetLivingEntity.OnDeath += OnPlayerDeath; //That's how we subscribe a method to a System.Action method (OnDeath)
+        }
+
         mainCamera = Camera.main;
         xMax = mainCamera.pixelWidth*0.8f;
         xMin = mainCamera.pixelWidth * 0.2f;
@@ -29,24 +39,37 @@ public class CameraController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void LateUpdate () {
-        Debug.DrawRay(mainCamera.transform.position, mainCamera.transform.forward, Color.red);
-        Debug.DrawRay(mainCamera.transform.position, Vector3.up, Color.red);
-        Vector3 playerScreenPos = mainCamera.WorldToScreenPoint(playerT.position);
 
-        Vector3 translation = Vector3.zero;
-        if (!disableXFollow)
-            if (playerScreenPos.x > xMax && !isTranslating)
-                translation += (Vector3.right * 10);
-            if (playerScreenPos.x < xMin && !isTranslating)
-                translation += (Vector3.left * 10);
-        if (!disableYFollow)
-            if (playerScreenPos.y > yMax && !isTranslating)
-                translation += (Vector3.forward * 6);
-            if (playerScreenPos.y < yMin && !isTranslating)
-                translation += (Vector3.back * 6);
+        if (hasTarget)
+        {
+            Vector3 playerScreenPos = mainCamera.WorldToScreenPoint(playerT.position);
 
-        if (translation != Vector3.zero)
-            StartCoroutine(TranslateCamera(translation));
+            Vector3 translation = Vector3.zero;
+            if (!disableXFollow)
+            {
+                if (playerScreenPos.x > xMax && !isTranslating)
+                    translation += (Vector3.right * 10);
+                if (playerScreenPos.x < xMin && !isTranslating)
+                    translation += (Vector3.left * 10);
+            }
+
+            if (!disableYFollow)
+            {
+                if (playerScreenPos.y > yMax && !isTranslating)
+                    translation += (Vector3.forward * 6);
+                if (playerScreenPos.y < yMin && !isTranslating)
+                    translation += (Vector3.back * 6);
+            }
+                
+            if (translation != Vector3.zero)
+                StartCoroutine(TranslateCamera(translation));
+        }
+    }
+
+    void OnPlayerDeath()
+    {
+        hasTarget = false;
+        targetLivingEntity.OnDeath -= OnPlayerDeath;
     }
 
     IEnumerator TranslateCamera(Vector3 translation)
@@ -67,5 +90,6 @@ public class CameraController : MonoBehaviour {
             yield return new WaitForFixedUpdate();
         }
     }
+
 
 }

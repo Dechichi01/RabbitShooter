@@ -60,6 +60,7 @@ public class Enemy : LivingEntity {
 
 	void OnTargetDeath(){
 		hasTarget = false;
+        targetLivingEntity.OnDeath -= OnTargetDeath;//Good practice to unsubscribe from a method
 		currentState = State.Idle;
 	}
 
