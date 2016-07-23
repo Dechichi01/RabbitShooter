@@ -17,7 +17,6 @@ public class GunController : MonoBehaviour {
 		if (equippedGun != null){
 			Destroy(equippedGun.gameObject);
 		}
-		Debug.DrawLine(weaponHold.position, weaponHold.position + Vector3.right*10);
 		equippedGun = Instantiate(gunToEquip, weaponHold.position, weaponHold.rotation) as Gun;
 		equippedGun.transform.parent = weaponHold;
 	}
