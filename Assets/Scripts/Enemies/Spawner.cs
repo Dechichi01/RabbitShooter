@@ -53,13 +53,14 @@ public class Spawner : MonoBehaviour {
     {
         while (true)
         {
+            yield return new WaitForSeconds(timeBetweenCampingChecks);
+
             if (playerT.position != null)
             {
                 isCamping = (playerT.position - campPositionOld).sqrMagnitude < Mathf.Pow(campThresholdDist, 2);
                 campPositionOld = playerT.position;
             }
             
-            yield return new WaitForSeconds(timeBetweenCampingChecks);
         }
     }
     
@@ -118,7 +119,7 @@ public class Spawner : MonoBehaviour {
 
             if (OnNewWave != null)
                 OnNewWave(currentWaveNumber);
-            ResetPlayerPosition();
+            //ResetPlayerPosition();
 		}
 	}
 

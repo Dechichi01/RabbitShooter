@@ -25,6 +25,7 @@ public class Enemy : LivingEntity {
 	float targetCollisionRadius;
 
 	bool hasTarget;
+    public bool stationary;
 
 	override protected void Start () {
 		base.Start();
@@ -42,12 +43,12 @@ public class Enemy : LivingEntity {
 			myCollisionRadius = GetComponent<CapsuleCollider>().radius;
 			targetCollisionRadius = target.GetComponent<CapsuleCollider>().radius;
 
-			StartCoroutine(UpdatePath());
+            if (!stationary)
+			    StartCoroutine(UpdatePath());
 		}
 	}
 
 	void Update () {
-
 		if (hasTarget){
 			if (Time.time > nextAttackTime){
 				float sqrDstToTarget = (target.position - transform.position).sqrMagnitude; //take the distance between two positions in sqrMagnitude
@@ -109,8 +110,8 @@ public class Enemy : LivingEntity {
 		pathFinder.enabled = true;
 	}
 
-	IEnumerator UpdatePath(){
-		float refreashRate = 0.5f;
+	IEnumerator UpdatePath(){            
+        float refreashRate = 0.5f;
 
 		while(hasTarget){
 			if (currentState == State.Chasing){

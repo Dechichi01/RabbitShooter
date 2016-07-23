@@ -7,6 +7,8 @@ public class LivingEntity : MonoBehaviour, IDamageable {
 	protected float health;
 	protected bool dead;
 
+    public ParticleSystem bloodEffect;
+
 	public event System.Action OnDeath;
 
 	protected virtual void Start(){
@@ -14,14 +16,18 @@ public class LivingEntity : MonoBehaviour, IDamageable {
 	}
 
     public virtual void TakeHit(float damage, Vector3 hitPoint, Vector3 hitDirection){
-		//TODO: Some stuffs with hit
-		TakeDamage(damage);
+        //TODO: Some stuffs with hit
+        System.Random rand = new System.Random((int)Time.time);
+
+        if (bloodEffect != null)
+            Destroy(Instantiate(bloodEffect.gameObject, hitPoint, Quaternion.Euler(rand.Next(-50, 50),rand.Next(-180, 180), rand.Next(-50, 50))) as GameObject, bloodEffect.startLifetime);
+        TakeDamage(damage);
 	}
 
 	public virtual void TakeDamage(float damage){
 		health -= damage;
 
-		if (health <= 0 && !dead){
+        if (health <= 0 && !dead){
 			Die();
 		}		
 	}
