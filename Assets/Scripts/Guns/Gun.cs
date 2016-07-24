@@ -21,6 +21,8 @@ public class Gun : MonoBehaviour {
     public Transform shell;
     public Transform shellEjection;
     private MuzzleFlash muzzleFlash;
+    public AudioClip shootAudio;
+    public AudioClip reloadAudio;
 
 	float nextShotTime;
 
@@ -52,13 +54,18 @@ public class Gun : MonoBehaviour {
             muzzleFlash.Activate();
 
             transform.localPosition -= Vector3.forward * recoil;
+
+            AudioManager.instance.PlaySound(shootAudio, transform.position);
 		}
 	}
 
     public void Reload()
     {
         if (!isReloading && projectilesRemaining != projectilesPerMag)
+        {
             StartCoroutine(AnimateReload());
+            AudioManager.instance.PlaySound(reloadAudio, transform.position);
+        }
     }
 
     IEnumerator AnimateReload()
