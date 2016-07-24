@@ -27,21 +27,29 @@ public class Enemy : LivingEntity {
 	bool hasTarget;
     public bool stationary;
 
+    void Awake()
+    {
+        pathFinder = GetComponent<NavMeshAgent>();
+
+        if (GameObject.FindGameObjectWithTag("Player") != null)
+        {
+            hasTarget = true;
+            
+            target = GameObject.FindGameObjectWithTag("Player").transform;
+            targetLivingEntity = target.GetComponent<LivingEntity>();
+
+            myCollisionRadius = GetComponent<CapsuleCollider>().radius;
+            targetCollisionRadius = target.GetComponent<CapsuleCollider>().radius;
+        }
+    }
+
 	override protected void Start () {
 		base.Start();
-		pathFinder = GetComponent<NavMeshAgent>();
-		skinMaterial = GetComponent<Renderer>().material;
-		originalColour = skinMaterial.color;
 
-		if (GameObject.FindGameObjectWithTag("Player") != null){
-			hasTarget = true;
+		if (hasTarget){
+
 			currentState = State.Chasing;
-			target = GameObject.FindGameObjectWithTag("Player").transform;
-			targetLivingEntity = target.GetComponent<LivingEntity>();
 			targetLivingEntity.OnDeath += OnTargetDeath; //That's how we subscribe a method to a System.Action method (OnDeath)
-
-			myCollisionRadius = GetComponent<CapsuleCollider>().radius;
-			targetCollisionRadius = target.GetComponent<CapsuleCollider>().radius;
 
             if (!stationary)
 			    StartCoroutine(UpdatePath());
@@ -76,6 +84,17 @@ public class Enemy : LivingEntity {
 		currentState = State.Idle;
 	}
 
+    public void SetCharacteristics(float moveSpeed, int hitsToKillPlayer, float enemyHealth, Color skinColor)
+    {
+        pathFinder.speed = moveSpeed;
+        if (hasTarget)
+            damage = Mathf.Ceil(targetLivingEntity.startingHealth / hitsToKillPlayer);
+
+        startingHealth = enemyHealth;
+        skinMaterial = GetComponent<Renderer>().sharedMaterial;
+        skinMaterial.color = skinColor;
+        originalColour = skinMaterial.color;
+    }
 	IEnumerator Attack(){
 
 		currentState = State.Attacking;
