@@ -46,7 +46,9 @@ public class Player : LivingEntity {
         {
     	case SwipeDetector.SwipeDirection.Right:
 			controller.Rotate(new Vector3(0f,90f,0f));
-			//transform.Rotate(new Vector3(0f,90f,0f));
+			break;
+        case SwipeDetector.SwipeDirection.Left:
+			controller.Rotate(new Vector3(0f,-90f,0f));
 			break;
         case SwipeDetector.SwipeDirection.Shoot:
             gunController.Shoot();
