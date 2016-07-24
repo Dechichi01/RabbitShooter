@@ -16,6 +16,7 @@ using System.Collections;
 
     SwipeDirection sSwipeDirection = SwipeDirection.Null;
     public RectTransform aimJoystickRect;
+    public RectTransform shootJoystickRect;
 
     public float minSwipeDistY;
     public float minSwipeDistX;
@@ -33,50 +34,17 @@ using System.Collections;
             Touch touch = new Touch();
             foreach (Touch possibleTouch in Input.touches)
             {
-                if (RectTransformUtility.RectangleContainsScreenPoint(aimJoystickRect, possibleTouch.position))
+                if (RectTransformUtility.RectangleContainsScreenPoint(shootJoystickRect, possibleTouch.position))
                 {
-                    touch = possibleTouch;
-                    break;
+                    if (possibleTouch.phase == TouchPhase.Began)
+                        sSwipeDirection = SwipeDirection.Shoot;
+                }                    
+                else if (RectTransformUtility.RectangleContainsScreenPoint(aimJoystickRect, possibleTouch.position))
+                {
+                    if (possibleTouch.phase == TouchPhase.Began)
+                        sSwipeDirection = SwipeDirection.Right;
                 }
-            }
-            switch (touch.phase)
-            {
-                case TouchPhase.Began:
-                    startPos = touch.position;
-                    starTime = Time.time;
-                    break;
-                case TouchPhase.Ended:
-                    float swipeDistVertical = (new Vector3(0, touch.position.y, 0) - new Vector3(0, startPos.y, 0)).magnitude;
-                    if (swipeDistVertical > minSwipeDistY)
-                    {
-                        float swipeValue = Mathf.Sign(touch.position.y - startPos.y);
-                        if (swipeValue > 0)
-                            sSwipeDirection = SwipeDirection.Jump;
-                                                         
-                        else if (swipeValue < 0)//down swipe
-                            sSwipeDirection = SwipeDirection.Duck;
-                    }
-                    float swipeDistHorizontal = (new Vector3(touch.position.x, 0, 0) - new Vector3(startPos.x, 0, 0)).magnitude;
-                    if (swipeDistHorizontal > minSwipeDistX)
-                    {
-                        float swipeValue = Mathf.Sign(touch.position.x - startPos.x);
-                        if (swipeValue > 0)//right swipe
-                            sSwipeDirection = SwipeDirection.Right;
-                        else if (swipeValue < 0)//left swipe
-                            sSwipeDirection = SwipeDirection.Left; 
-                    }
-                    break;
-                case TouchPhase.Stationary:
-                    if (Time.time - starTime > touchTimeToShoot)
-                    {
-                        isShooting = true;
-                        sSwipeDirection = SwipeDirection.Shoot;
-                    }
-                    break;
-                /*case TouchPhase.Moved:
-                    if (isShooting)
-                        sSwipeDirection = SwipeDirection.Shoot;
-                    break;*/
+
             }
         }
     }
