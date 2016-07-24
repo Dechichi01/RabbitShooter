@@ -44,7 +44,6 @@ using System.Collections;
                     if (possibleTouch.phase == TouchPhase.Began)
                         sSwipeDirection = SwipeDirection.Right;
                 }
-
             }
         }
     }
