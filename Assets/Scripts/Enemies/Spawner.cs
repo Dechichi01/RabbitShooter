@@ -20,7 +20,7 @@ public class Spawner : MonoBehaviour {
 
     //
     float timeBetweenCampingChecks = 2;
-    float campThresholdDist = 1.5f;
+    float campThresholdDist = 2.5f;
     Vector3 campPositionOld;
     bool isCamping;
     //

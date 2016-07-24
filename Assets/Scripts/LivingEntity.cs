@@ -19,8 +19,7 @@ public class LivingEntity : MonoBehaviour, IDamageable {
         //TODO: Some stuffs with hit
         System.Random rand = new System.Random((int)Time.time);
 
-        if (bloodEffect != null)
-            Destroy(Instantiate(bloodEffect.gameObject, hitPoint, Quaternion.Euler(rand.Next(-50, 50),rand.Next(-180, 180), rand.Next(-50, 50))) as GameObject, bloodEffect.startLifetime);
+        Destroy(Instantiate(bloodEffect.gameObject, hitPoint, Quaternion.Euler(rand.Next(-50, 50),rand.Next(-180, 180), rand.Next(-50, 50))) as GameObject, bloodEffect.startLifetime);
         TakeDamage(damage);
 	}
 

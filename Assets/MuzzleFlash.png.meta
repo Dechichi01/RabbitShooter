@@ -1,0 +1,144 @@
+fileFormatVersion: 2
+guid: 20d8b13efa7b29a4c9322782a4b2387b
+timeCreated: 1469311682
+licenseType: Free
+TextureImporter:
+  fileIDToRecycleName:
+    21300000: shoot_effects_0
+    21300002: shoot_effects_1
+    21300004: shoot_effects_2
+    21300006: shoot_effects_3
+  serializedVersion: 2
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 1
+    linearTexture: 0
+    correctGamma: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+  isReadable: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 0
+  cubemapConvolution: 0
+  cubemapConvolutionSteps: 7
+  cubemapConvolutionExponent: 1.5
+  seamlessCubemap: 0
+  textureFormat: -1
+  maxTextureSize: 2048
+  textureSettings:
+    filterMode: -1
+    aniso: 16
+    mipBias: -1
+    wrapMode: 1
+  nPOTScale: 0
+  lightmap: 0
+  rGBM: 0
+  compressionQuality: 50
+  allowsAlphaSplitting: 0
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spritePixelsToUnits: 100
+  alphaIsTransparency: 1
+  textureType: 8
+  buildTargetSettings: []
+  spriteSheet:
+    sprites:
+    - name: shoot_effects_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 200
+        width: 400
+        height: 200
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: 156, y: 19}
+        - {x: -79, y: 52}
+        - {x: -147, y: 100}
+        - {x: -178, y: 100}
+        - {x: -191, y: 95}
+        - {x: -195, y: 85}
+        - {x: -195, y: -100}
+        - {x: -146, y: -100}
+        - {x: -115, y: -46}
+        - {x: 88, y: -60}
+        - {x: 156, y: -18}
+    - name: shoot_effects_1
+      rect:
+        serializedVersion: 2
+        x: 400
+        y: 200
+        width: 400
+        height: 200
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: 181, y: 22}
+        - {x: 132, y: 58}
+        - {x: -194, y: 58}
+        - {x: -194, y: -17}
+        - {x: -170, y: -46}
+        - {x: -112, y: -52}
+        - {x: -58, y: -52}
+        - {x: 81, y: -41}
+        - {x: 176, y: -30}
+        - {x: 181, y: -17}
+    - name: shoot_effects_2
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 400
+        height: 200
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: -6, y: 60}
+        - {x: -68, y: 89}
+        - {x: -191, y: 89}
+        - {x: -191, y: -75}
+        - {x: -57, y: -75}
+        - {x: 34, y: -31}
+        - {x: 34, y: 10}
+        - {x: 31, y: 20}
+    - name: shoot_effects_3
+      rect:
+        serializedVersion: 2
+        x: 400
+        y: 0
+        width: 400
+        height: 200
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline:
+      - - {x: -3, y: 62}
+        - {x: -143, y: 62}
+        - {x: -192, y: 36}
+        - {x: -192, y: -50}
+        - {x: -170, y: -78}
+        - {x: -96, y: -78}
+        - {x: -73, y: -73}
+        - {x: 13, y: -56}
+        - {x: 83, y: -25}
+        - {x: 83, y: 18}
+    outline: []
+  spritePackingTag: 
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
