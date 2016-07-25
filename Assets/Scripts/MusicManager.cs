@@ -17,7 +17,6 @@ public class MusicManager : MonoBehaviour {
     void OnLevelWasLoaded(int sceneIndex)
     {
         string newSceneName = SceneManager.GetActiveScene().name;
-        Debug.Log(newSceneName);
         if (newSceneName !=sceneName)
         {
             sceneName = newSceneName;
@@ -36,10 +35,12 @@ public class MusicManager : MonoBehaviour {
             case "Game":
                 clipToPlay = mainTheme;
                 break;
+            default:
+                clipToPlay = mainTheme;
+                break;
         }
 
-        if (clipToPlay != null)
-            AudioManager.instance.PlayMusic(clipToPlay, 2, true);
+        AudioManager.instance.PlayMusic(clipToPlay, 2, true);
     }
 	
 	void Update () {

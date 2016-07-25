@@ -74,7 +74,7 @@ public class Spawner : MonoBehaviour {
         float tileFlashSpeed = 4;
 
         Transform spawnTile = map.GetRandomOpenTile();
-        if (isCamping)
+        if (isCamping && playerT.position != null)
             spawnTile = map.GetTileFromPosition(playerT.position);
 
         Material tileMat = spawnTile.GetComponent<Renderer>().material;

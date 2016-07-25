@@ -30,8 +30,11 @@ public class MapGenerator : MonoBehaviour
 
     void Awake()
     {
-        FindObjectOfType<Spawner>().OnNewWave += OnNewWave;
-        //GenerateMap();
+        Spawner spawner = FindObjectOfType<Spawner>();
+        if (spawner!= null)
+            FindObjectOfType<Spawner>().OnNewWave += OnNewWave;
+        else
+            GenerateMap();
     }
 
     public void GenerateMap()

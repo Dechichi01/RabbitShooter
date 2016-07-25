@@ -98,10 +98,10 @@ public class Enemy : LivingEntity {
             damage = Mathf.Ceil(targetLivingEntity.startingHealth / hitsToKillPlayer);
 
         startingHealth = enemyHealth;
-        Material universalSkin = GetComponent<Renderer>().sharedMaterial;
-        universalSkin.color = skinColor;
-        originalColour = universalSkin.color;
-        skinMaterial = GetComponent<Renderer>().material;
+        //Material universalSkin = GetComponent<Renderer>().sharedMaterial;
+        //universalSkin.color = skinColor;
+        //originalColour = universalSkin.color;
+        //skinMaterial = GetComponent<Renderer>().material;
 
     }
 	IEnumerator Attack(){
@@ -117,7 +117,7 @@ public class Enemy : LivingEntity {
 		float percent = 0;
 		bool hasAppliedDamage = false;
 
-		skinMaterial.color = Color.red;
+		//skinMaterial.color = Color.red;
 
 		while (percent <= 1){
 
@@ -133,7 +133,7 @@ public class Enemy : LivingEntity {
 			yield return null;
 		}
 
-		skinMaterial.color = originalColour;
+		//skinMaterial.color = originalColour;
 		currentState = State.Chasing;
 		pathFinder.enabled = true;
 	}

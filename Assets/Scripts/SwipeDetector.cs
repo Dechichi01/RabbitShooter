@@ -84,7 +84,6 @@ using System.Collections;
             SwipeDirection etempSwipeDirection = sSwipeDirection;
             sSwipeDirection = SwipeDirection.Null;
 
-            Debug.Log(etempSwipeDirection);
             return etempSwipeDirection;
         }
         else
