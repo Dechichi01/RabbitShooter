@@ -3,9 +3,9 @@ using System.Collections;
 
 public class AudioManager : MonoBehaviour {
 
-    float masterVolumePercent = 1;
-    float sfxVolumePercent = 1;
-    float musicVolumePercent = 1;
+    public float masterVolumePercent { get;  private set; }
+    public float sfxVolumePercent { get; private set; }
+    public float musicVolumePercent { get; private set; }
 
     AudioSource[] musicSources;
     AudioSource sfx2DSource;
@@ -42,13 +42,21 @@ public class AudioManager : MonoBehaviour {
             sfx2DSource.transform.parent = transform;
 
             audioListener = FindObjectOfType<AudioListener>().transform;
-            playerT = FindObjectOfType<Player>().transform;
+            if (FindObjectOfType<Player>() !=null)
+                playerT = FindObjectOfType<Player>().transform;
 
-            masterVolumePercent = PlayerPrefs.GetFloat("master vol", masterVolumePercent);
-            sfxVolumePercent = PlayerPrefs.GetFloat("sfx vol", sfxVolumePercent);
-            musicVolumePercent = PlayerPrefs.GetFloat("music vol", musicVolumePercent);
+            masterVolumePercent = PlayerPrefs.GetFloat("master vol", 1);
+            sfxVolumePercent = PlayerPrefs.GetFloat("sfx vol", 1);
+            musicVolumePercent = PlayerPrefs.GetFloat("music vol", 1);
         }
         
+    }
+
+    void OnLevelWasLoaded(int levelIndex)
+    {
+        Debug.Log("called");
+        if (FindObjectOfType<Player>() != null)
+            playerT = FindObjectOfType<Player>().transform;
     }
 
     void Update()

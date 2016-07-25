@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 public class Spawner : MonoBehaviour {
 
@@ -8,6 +9,7 @@ public class Spawner : MonoBehaviour {
 
     LivingEntity playerEntity;
     Transform playerT;
+    GameUI gameUI;
 
 	Wave currentWave;
 	int currentWaveNumber = 0;
@@ -37,6 +39,8 @@ public class Spawner : MonoBehaviour {
         //
         map = FindObjectOfType<MapGenerator>();
 		NextWave();
+        //
+        gameUI = FindObjectOfType<GameUI>();
 	}
 
 	void Update(){
@@ -125,6 +129,10 @@ public class Spawner : MonoBehaviour {
                 OnNewWave(currentWaveNumber);
             //ResetPlayerPosition();
 		}
+        else
+        {
+            gameUI.OnWin();
+        }
 	}
 
 	[System.Serializable]
