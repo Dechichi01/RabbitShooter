@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Projectile : MonoBehaviour {
+public class Projectile : PoolObject {
 
 	public LayerMask collisionMask;
 	float speed = 100f;
@@ -11,7 +11,7 @@ public class Projectile : MonoBehaviour {
 	float skinWidth = .1f;
 
 	void Start(){
-		Destroy(gameObject, lifeTime);
+        Destroy(lifeTime);
 
 		Collider[] initialCollisions = Physics.OverlapSphere(transform.position, 0.1f, collisionMask);
 		if (initialCollisions.Length > 0){
@@ -44,6 +44,6 @@ public class Projectile : MonoBehaviour {
 		if (damageableObject != null){
 			damageableObject.TakeHit(damage, hitPoint, transform.forward);
 		}
-		GameObject.Destroy(gameObject);
+		Destroy();
 	}
 }

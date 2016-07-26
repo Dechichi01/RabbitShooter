@@ -10,8 +10,6 @@ public class Player : LivingEntity {
 	PlayerController controller;
 	GunController gunController;
 	Camera viewCamera;
-    public Joystick rotateJoyStick;
-    public RectTransform aimJoystickRect;
     private SwipeDetector swipeControl;
     Vector3 aimVelocity;
 

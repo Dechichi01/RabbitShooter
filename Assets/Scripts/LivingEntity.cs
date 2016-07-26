@@ -1,13 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class LivingEntity : MonoBehaviour, IDamageable {
+public class LivingEntity : PoolObject, IDamageable {
 
 	public float startingHealth;
 	public float health { get; protected set; }
 	protected bool dead;
-
-    public ParticleSystem bloodEffect;
 
 	public event System.Action OnDeath;
 
@@ -19,7 +17,6 @@ public class LivingEntity : MonoBehaviour, IDamageable {
         //TODO: Some stuffs with hit
         System.Random rand = new System.Random((int)Time.time);
 
-        Destroy(Instantiate(bloodEffect.gameObject, hitPoint, Quaternion.Euler(rand.Next(-50, 50),rand.Next(-180, 180), rand.Next(-50, 50))) as GameObject, bloodEffect.startLifetime);
         TakeDamage(damage);
 	}
 
@@ -36,7 +33,11 @@ public class LivingEntity : MonoBehaviour, IDamageable {
 		dead = true;
 		if (OnDeath != null){
 			OnDeath();
+            OnDeath = null;//Make all methods unsubscribe from OnDeath
 		}
-		GameObject.Destroy(gameObject);
+        if (GetComponent<Enemy>())
+            Destroy();
+        else
+		    GameObject.Destroy(gameObject);
 	}
 }

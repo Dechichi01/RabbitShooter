@@ -32,6 +32,8 @@ public class Gun : MonoBehaviour {
     {
         muzzleFlash = GetComponent<MuzzleFlash>();
         projectilesRemaining = projectilesPerMag;
+        PoolManager.instance.CreatePool(projectile.gameObject, 30);
+        PoolManager.instance.CreatePool(shell.gameObject, 30);
     }
 
     void LateUpdate()
@@ -47,10 +49,12 @@ public class Gun : MonoBehaviour {
             projectilesRemaining--;
 
 			nextShotTime = Time.time + msBetweenShots/1000;
-			Projectile newProjectile = (Projectile) Instantiate(projectile, muzzle.position, muzzle.rotation);
+            Projectile newProjectile = PoolManager.instance.ReuseObject(projectile.gameObject, muzzle.position, muzzle.rotation).GetComponent<Projectile>();
+			//Projectile newProjectile = (Projectile) Instantiate(projectile, muzzle.position, muzzle.rotation);
 			newProjectile.SetSpeed(muzzleVelocity);
 
-            Instantiate(shell, shellEjection.position, shellEjection.rotation);
+            PoolManager.instance.ReuseObject(shell.gameObject, shellEjection.position, shellEjection.rotation);
+            //Instantiate(shell, shellEjection.position, shellEjection.rotation);
             muzzleFlash.Activate();
 
             transform.localPosition -= Vector3.forward * recoil;

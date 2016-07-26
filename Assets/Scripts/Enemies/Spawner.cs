@@ -30,6 +30,7 @@ public class Spawner : MonoBehaviour {
     public event System.Action<int> OnNewWave;
 
 	void Start(){
+        PoolManager.instance.CreatePool(enemy.gameObject, 20);
         playerEntity = FindObjectOfType<Player>();
         playerT = playerEntity.GetComponent<Transform>();
         //
@@ -91,7 +92,7 @@ public class Spawner : MonoBehaviour {
             yield return null; //wait for a frame
         }
 
-        Enemy spawnedEnemy = (Enemy)Instantiate(enemy, spawnTile.position + Vector3.up, Quaternion.identity) as Enemy;
+        Enemy spawnedEnemy = PoolManager.instance.ReuseObject(enemy.gameObject, spawnTile.position + Vector3.up, Quaternion.identity).GetComponent<Enemy>();
         spawnedEnemy.OnDeath += OnEnemyDeath;
         spawnedEnemy.SetCharacteristics(currentWave.moveSpeed, currentWave.hitsToKillPlayer, currentWave.enemyHealth, currentWave.skinColor);
     }
