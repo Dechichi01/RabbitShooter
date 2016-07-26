@@ -3,10 +3,13 @@ using System.Collections;
 
 public class CameraController : MonoBehaviour {
 
-    private Transform playerT;
     private Camera mainCamera;
 
+    public Transform playerT;
     public float cameraSpeed = 5f;
+    public float verticalOffset = 12f;
+    public float horizontalOffset = 3f;
+    public bool editorMode;
 
     private Vector3 smoothVelocity;
 
@@ -15,7 +18,8 @@ public class CameraController : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        playerT = GameObject.FindWithTag("Player").GetComponent<Transform>();
+        //playerT = GameObject.FindWithTag("Player").GetComponent<Transform>();
+
         if (playerT != null)
         {
             hasTarget = true;
@@ -28,16 +32,21 @@ public class CameraController : MonoBehaviour {
 	
 	// Update is called once per frame
 	void LateUpdate () {
-
-        if (hasTarget)
+        SinchronizePosition();
+    }
+    
+    public void SinchronizePosition()
+    {
+        if (hasTarget || editorMode)
         {
-            mainCamera.transform.position = playerT.position + Vector3.up * 12 + Vector3.back * 3;
+            transform.position = playerT.position + Vector3.up * verticalOffset + Vector3.back * horizontalOffset;
         }
     }
 
     void OnPlayerDeath()
     {
         hasTarget = false;
+        editorMode = false;
         targetLivingEntity.OnDeath -= OnPlayerDeath;
     }
 
