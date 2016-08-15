@@ -43,7 +43,7 @@ public class CameraController : MonoBehaviour {
         if (hasTarget || editorMode)
         {
             transform.position = playerT.position + Vector3.up * verticalOffset + Vector3.back * horizontalOffset;
-            if (transform.position.z < mapBottomEdge.z)
+            if (!editorMode && transform.position.z < mapBottomEdge.z)
                 transform.position = new Vector3(transform.position.x, transform.position.y, mapBottomEdge.z);
         }
     }

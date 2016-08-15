@@ -20,23 +20,14 @@ public class Spawner : MonoBehaviour {
 	int enemiesRemainingAlive;
     private MapGenerator map;
 
-    //
-    float timeBetweenCampingChecks = 2;
-    float campThresholdDist = 2.5f;
-    Vector3 campPositionOld;
-    bool isCamping;
-    //
-
     public event System.Action<int> OnNewWave;
 
 	void Start(){
         PoolManager.instance.CreatePool(enemy.gameObject, 20);
         playerEntity = FindObjectOfType<Player>();
         playerT = playerEntity.GetComponent<Transform>();
-        //
-        campPositionOld = playerT.position;
+
         playerEntity.OnDeath += OnPlayerDeath;
-        StartCoroutine(CheckCamping());
         //
         map = FindObjectOfType<MapGenerator>();
 		NextWave();
@@ -53,21 +44,6 @@ public class Spawner : MonoBehaviour {
             StartCoroutine(SpawnEnemy());
 		} 
 	}
-
-    IEnumerator CheckCamping()
-    {
-        while (true)
-        {
-            yield return new WaitForSeconds(timeBetweenCampingChecks);
-
-            if (playerT.position != null)
-            {
-                isCamping = (playerT.position - campPositionOld).sqrMagnitude < Mathf.Pow(campThresholdDist, 2);
-                campPositionOld = playerT.position;
-            }
-            
-        }
-    }
     
     IEnumerator SpawnEnemy()
     {
@@ -75,8 +51,6 @@ public class Spawner : MonoBehaviour {
         float tileFlashSpeed = 4;
 
         Transform spawnTile = map.GetRandomOpenTile();
-        if (isCamping && playerT.position != null)
-            spawnTile = map.GetTileFromPosition(playerT.position);
 
         Material tileMat = spawnTile.GetComponent<Renderer>().material;
 

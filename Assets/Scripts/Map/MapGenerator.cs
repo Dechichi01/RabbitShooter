@@ -124,22 +124,11 @@ public class MapGenerator : MonoBehaviour
 
             if (randomCoord != map.mapCentre && MapIsFullyAccessible(obstacleMap, currentObstacleCount))
             {
-                float obstacleHeigh = Mathf.Lerp(map.minObstacleHeight, map.maxObstacleHeight, (float)prng.NextDouble());
                 Vector3 obstaclePosition = CoordToPosition(randomCoord.x, randomCoord.y);
 
-                Transform newObstacle = Instantiate(obstaclePrefab, obstaclePosition + Vector3.up * obstacleHeigh/2, Quaternion.identity) as Transform;
-                newObstacle.localScale = new Vector3((1 - outlinePercent) * tileSize, obstacleHeigh, (1 - outlinePercent) * tileSize);
+                Transform newObstacle = Instantiate(obstaclePrefab, obstaclePosition + Vector3.up * 0.5f, Quaternion.Euler(0f, Random.Range(0,360), 0f)) as Transform;
                 newObstacle.parent = mapHolder;//So it gets destroyed with the rest of the map
 
-                //Set the color of the obstacle
-                Renderer obstacleRenderer = newObstacle.GetComponent<Renderer>();
-                Material obstacleMaterial = new Material(obstacleRenderer.sharedMaterial);
-                float colorPercent = randomCoord.y / (float)map.mapSize.y; //Interpolates based on y coordinate at the map
-                obstacleMaterial.color = Color.Lerp(map.foregroundColor, map.backgroundColor, colorPercent);
-                obstacleRenderer.sharedMaterial = obstacleMaterial;
-                ///
-
-                //remove this tile with obstacle from our alltilelist
                 allOpenCoords.Remove(randomCoord);
             }
             else
@@ -310,10 +299,6 @@ public class Map
     [Range(0, 1)]
     public float obstaclePercent;
     public int seed;
-    public float minObstacleHeight;
-    public float maxObstacleHeight;
-    public Color foregroundColor;
-    public Color backgroundColor;
 
     public Coord mapCentre
     {
