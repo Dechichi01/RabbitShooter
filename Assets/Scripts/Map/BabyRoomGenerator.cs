@@ -277,6 +277,11 @@ public class BabyRoomGenerator : MonoBehaviour
         return tileMap[randomCoord.x,randomCoord.y];
     }
 
+    public Transform GetEdgeTile()
+    {
+        return tileMap[map.mapSize.x - 2, map.mapSize.y / 2];
+    }
+
     public Transform GetTileFromPosition(Vector3 position)
     {
         int x = Mathf.RoundToInt(position.x / tileSize + (map.mapSize.x - 1) / 2f);

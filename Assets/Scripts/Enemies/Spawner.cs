@@ -41,15 +41,26 @@ public class Spawner : MonoBehaviour {
 			enemiesRemainingToSpawn--;
 			nextSpawnTime = Time.time + currentWave.timeBetweenSpawns;
 
-            SpawnEnemy();
+            StartCoroutine(SpawnEnemy());
 		} 
 	}
     
-    void SpawnEnemy()
+    IEnumerator SpawnEnemy()
     {
-        Transform spawnTile = map.GetRandomOpenTile();
+        float spawnDelay = 1.5f;
+
+        //Transform spawnTile = map.GetRandomOpenTile();
+        Transform spawnTile = map.GetEdgeTile();
 
         Material tileMat = spawnTile.GetComponent<Renderer>().material;
+
+        float spawnTimer = 0;
+
+        while (spawnTimer < spawnDelay)
+        {
+            spawnTimer += Time.deltaTime;
+            yield return null; //wait for a frame
+        }
 
         Enemy spawnedEnemy = PoolManager.instance.ReuseObject(enemy.gameObject, spawnTile.position + Vector3.up, Quaternion.identity).GetComponent<Enemy>();
         spawnedEnemy.OnDeath += OnEnemyDeath;
