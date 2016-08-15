@@ -2,29 +2,29 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class MapGenerator : MonoBehaviour
+public class BabyRoomGenerator : MonoBehaviour
 {
-    public Map map;
-    public int mapIndex;
+    public BabyRoom map;
 
     public Transform tilePrefab;
     public Transform wallPrefab;
     public Transform obstaclePrefab;
+    public Transform babyCribPrefab;
+    public Transform doorPrefab;
     public Transform navmeshFloor;
     public Transform navmeshMaskPrefab;
     public Transform boundary;
 
     public Vector2 maxMapSize;
 
-    [Range(0, 1)]
-    public float outlinePercent;
-
     List<Coord> allTileCoords;
+    List<Coord> allOpenCoords;
     Queue<Coord> shuffledTileCoords;
     Queue<Coord> shuffledOpenTileCoords;
     Transform[,] tileMap;
 
-    public float tileSize;
+    [HideInInspector]
+    public float tileSize = 2.4f;
 
 
     void Awake()
@@ -41,15 +41,13 @@ public class MapGenerator : MonoBehaviour
         tileMap = new Transform[map.mapSize.x, map.mapSize.y];
         GetComponent<BoxCollider>().size = new Vector3(map.mapSize.x * tileSize, .05f, map.mapSize.y * tileSize);
 
-
-
         allTileCoords = new List<Coord>();//Store all the x,y coordinates in our map
         //Store all coordinates
         for (int x = 0; x < map.mapSize.x; x++)
             for (int y = 0; y < map.mapSize.y; y++)
                 allTileCoords.Add(new Coord(x, y));
-        //Store all shuffled coordinates
-        shuffledTileCoords = new Queue<Coord>(Utility.ShuffleArray(allTileCoords.ToArray(), map.seed));
+
+        allOpenCoords = new List<Coord>(allTileCoords);//Copy of allTileCoords to be store only the open walls in the end
 
         string holderName = "Generated Map";
         if (transform.FindChild(holderName))
@@ -60,10 +58,29 @@ public class MapGenerator : MonoBehaviour
 
         InstantiateTiles(mapHolder);
         InstantiateWalls(mapHolder);
+        InstantiateFurniture(mapHolder);
+        //Store all shuffled coordinates
+        shuffledTileCoords = new Queue<Coord>(Utility.ShuffleArray(allOpenCoords.ToArray(), map.seed));
+
         InstantiateObstacles(mapHolder);
         InstantiateBoundaries(mapHolder);
         InstantiateNavMask(mapHolder);
 
+    }
+
+    private void InstantiateFurniture(Transform mapHolder)
+    {
+        Vector3 doorPosition = CoordToPosition(map.mapSize.x - 3, map.mapSize.y - 1) + Vector3.up*2.5f + Vector3.forward*tileSize/5 + Vector3.left*tileSize/2;
+        Transform door = Instantiate(doorPrefab, doorPosition, Quaternion.Euler(0f,0f,90f)) as Transform;
+        door.parent = mapHolder;
+
+        Vector3 cribPosition = CoordToPosition(2, map.mapSize.y - 2) + Vector3.left*tileSize/2 + Vector3.forward*tileSize/2;
+        Transform babyCrib = Instantiate(babyCribPrefab, cribPosition, Quaternion.Euler(0f,90f,0f)) as Transform;
+        babyCrib.parent = mapHolder;
+
+        for (int x = 0; x < 4; x++)
+            for (int y = map.mapSize.y -1; y > map.mapSize.y - 4; y--)
+                allOpenCoords.Remove(new Coord(x, y));
     }
 
     private void InstantiateNavMask(Transform mapHolder)
@@ -111,7 +128,7 @@ public class MapGenerator : MonoBehaviour
         System.Random prng = new System.Random(map.seed);
 
         bool[,] obstacleMap = new bool[(int)map.mapSize.x, (int)map.mapSize.y];
-        List<Coord> allOpenCoords = new List<Coord>(allTileCoords);
+        //allOpenCoords = new List<Coord>(allTileCoords);
 
         int obstacleCount = (int)(map.mapSize.x * map.mapSize.y * map.obstaclePercent);
         int currentObstacleCount = 0;
@@ -126,7 +143,9 @@ public class MapGenerator : MonoBehaviour
             {
                 Vector3 obstaclePosition = CoordToPosition(randomCoord.x, randomCoord.y);
 
-                Transform newObstacle = Instantiate(obstaclePrefab, obstaclePosition + Vector3.up * 0.5f, Quaternion.Euler(0f, Random.Range(0,360), 0f)) as Transform;
+                //Transform newObstacle = Instantiate(obstaclePrefab, obstaclePosition + Vector3.up * 0.5f, Quaternion.Euler(0f, Random.Range(0,360), 0f)) as Transform;
+                Transform newObstacle = Instantiate(obstaclePrefab, obstaclePosition + Vector3.up*0.25f, Quaternion.Euler(0f, Random.Range(0,360), 0f)) as Transform;
+                //newObstacle.localScale = new Vector3(tileSize, tileSize, tileSize);
                 newObstacle.parent = mapHolder;//So it gets destroyed with the rest of the map
 
                 allOpenCoords.Remove(randomCoord);
@@ -149,7 +168,7 @@ public class MapGenerator : MonoBehaviour
             {
                 Vector3 tilePosition = CoordToPosition(x, y);
                 Transform newTile = Instantiate(tilePrefab, tilePosition, Quaternion.Euler(Vector3.right * 90)) as Transform;
-                newTile.localScale = Vector3.one * (1 - outlinePercent) * tileSize;
+                newTile.localScale = Vector3.one * tileSize;
                 newTile.parent = mapHolder;
                 tileMap[x, y] = newTile;
             }
@@ -164,6 +183,7 @@ public class MapGenerator : MonoBehaviour
             Transform newWall = Instantiate(wallPrefab, wallPosition, Quaternion.identity) as Transform;
             newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
             newWall.parent = mapHolder;
+            allOpenCoords.Remove(new Coord(x, map.mapSize.y - 1));
         }
 
         for (int x = 0; x < map.mapSize.x; x++)
@@ -172,6 +192,7 @@ public class MapGenerator : MonoBehaviour
             Transform newWall = Instantiate(wallPrefab, wallPosition, Quaternion.identity) as Transform;
             newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
             newWall.parent = mapHolder;
+            allOpenCoords.Remove(new Coord(x, 0));
         }
 
         for (int y = 0; y < map.mapSize.y; y++)
@@ -180,6 +201,7 @@ public class MapGenerator : MonoBehaviour
             Transform newWall = Instantiate(wallPrefab, wallPosition, Quaternion.Euler(0f,90f,0f)) as Transform;
             newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
             newWall.parent = mapHolder;
+            allOpenCoords.Remove(new Coord(0, y));
         }
 
         for (int y = 0; y < map.mapSize.y; y++)
@@ -188,12 +210,12 @@ public class MapGenerator : MonoBehaviour
             Transform newWall = Instantiate(wallPrefab, wallPosition, Quaternion.Euler(0f, -90f, 0f)) as Transform;
             newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
             newWall.parent = mapHolder;
+            allOpenCoords.Remove(new Coord(map.mapSize.x - 1, y));
         }
     }
 
     void OnNewWave(int waveNumber)
     {
-        mapIndex = waveNumber - 1;
         GenerateMap();
     }
 
@@ -293,10 +315,10 @@ public struct Coord
 }
 
 [System.Serializable]
-public class Map
+public class BabyRoom
 {
     public Coord mapSize;
-    [Range(0, 1)]
+    [Range(0, 0.2f)]
     public float obstaclePercent;
     public int seed;
 

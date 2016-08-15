@@ -2,12 +2,12 @@
 using System.Collections;
 using UnityEditor;
 
-[CustomEditor (typeof(MapGenerator))]
-public class MapEditor : Editor {
+[CustomEditor (typeof(BabyRoomGenerator))]
+public class BabyRoomEditor : Editor {
 
     public override void OnInspectorGUI()
     {
-        MapGenerator map = target as MapGenerator;
+        BabyRoomGenerator map = target as BabyRoomGenerator;
 
         if (DrawDefaultInspector())
             map.GenerateMap();

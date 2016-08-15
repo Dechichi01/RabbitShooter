@@ -18,7 +18,7 @@ public class Spawner : MonoBehaviour {
 	float nextSpawnTime = 0f;
 
 	int enemiesRemainingAlive;
-    private MapGenerator map;
+    private BabyRoomGenerator map;
 
     public event System.Action<int> OnNewWave;
 
@@ -29,7 +29,7 @@ public class Spawner : MonoBehaviour {
 
         playerEntity.OnDeath += OnPlayerDeath;
         //
-        map = FindObjectOfType<MapGenerator>();
+        map = FindObjectOfType<BabyRoomGenerator>();
 		NextWave();
         //
         gameUI = FindObjectOfType<GameUI>();
@@ -41,30 +41,15 @@ public class Spawner : MonoBehaviour {
 			enemiesRemainingToSpawn--;
 			nextSpawnTime = Time.time + currentWave.timeBetweenSpawns;
 
-            StartCoroutine(SpawnEnemy());
+            SpawnEnemy();
 		} 
 	}
     
-    IEnumerator SpawnEnemy()
+    void SpawnEnemy()
     {
-        float spawnDelay = 1.5f;
-        float tileFlashSpeed = 4;
-
         Transform spawnTile = map.GetRandomOpenTile();
 
         Material tileMat = spawnTile.GetComponent<Renderer>().material;
-
-        Color initialColor = tileMat.color;
-        Color flashColor = Color.red;
-        float spawnTimer = 0;
-
-        while (spawnTimer < spawnDelay)
-        {
-            tileMat.color = Color.Lerp(initialColor, flashColor, Mathf.PingPong(spawnTimer * tileFlashSpeed, 1));
-
-            spawnTimer += Time.deltaTime;
-            yield return null; //wait for a frame
-        }
 
         Enemy spawnedEnemy = PoolManager.instance.ReuseObject(enemy.gameObject, spawnTile.position + Vector3.up, Quaternion.identity).GetComponent<Enemy>();
         spawnedEnemy.OnDeath += OnEnemyDeath;

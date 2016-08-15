@@ -20,7 +20,7 @@ public class CameraController : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        MapGenerator mapGen = GameObject.FindGameObjectWithTag("Map").GetComponent<MapGenerator>();
+        BabyRoomGenerator mapGen = GameObject.FindGameObjectWithTag("Map").GetComponent<BabyRoomGenerator>();
         mapBottomEdge = mapGen.CoordToPosition(0, 0) + Vector3.forward*mapGen.tileSize/2;
 
         if (playerT != null)
