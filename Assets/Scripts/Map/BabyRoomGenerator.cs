@@ -8,12 +8,13 @@ public class BabyRoomGenerator : MonoBehaviour
 
     public Transform tilePrefab;
     public Transform wallPrefab;
-    public Transform obstaclePrefab;
     public Transform babyCribPrefab;
     public Transform doorPrefab;
     public Transform navmeshFloor;
     public Transform navmeshMaskPrefab;
     public Transform boundary;
+
+    public Transform[] obstaclePrefabs;
 
     public Vector2 maxMapSize;
 
@@ -144,7 +145,7 @@ public class BabyRoomGenerator : MonoBehaviour
                 Vector3 obstaclePosition = CoordToPosition(randomCoord.x, randomCoord.y);
 
                 //Transform newObstacle = Instantiate(obstaclePrefab, obstaclePosition + Vector3.up * 0.5f, Quaternion.Euler(0f, Random.Range(0,360), 0f)) as Transform;
-                Transform newObstacle = Instantiate(obstaclePrefab, obstaclePosition + Vector3.up*0.25f, Quaternion.Euler(0f, Random.Range(0,360), 0f)) as Transform;
+                Transform newObstacle = Instantiate(obstaclePrefabs[Random.Range(0,obstaclePrefabs.Length)], obstaclePosition + Vector3.up*0.25f, Quaternion.Euler(0f, Random.Range(0,360), 0f)) as Transform;
                 //newObstacle.localScale = new Vector3(tileSize, tileSize, tileSize);
                 newObstacle.parent = mapHolder;//So it gets destroyed with the rest of the map
 
