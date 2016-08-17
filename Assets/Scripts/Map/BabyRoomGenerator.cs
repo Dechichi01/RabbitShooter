@@ -8,8 +8,12 @@ public class BabyRoomGenerator : MonoBehaviour
 
     public Transform tilePrefab;
     public Transform wallPrefab;
-    public Transform babyCribPrefab;
+    public Obstacle babyCribPrefab;
+    public Transform shelve;
     public Transform doorPrefab;
+    public Transform couchPrefab;
+    public Transform pillowMount;
+    public Transform evilPileOfToys;
     public Transform navmeshFloor;
     public Transform navmeshMaskPrefab;
     public Transform boundary;
@@ -71,7 +75,7 @@ public class BabyRoomGenerator : MonoBehaviour
 
     private void InstantiateFurniture(Transform mapHolder)
     {
-        Vector3 doorPosition = CoordToPosition(map.mapSize.x - 3, map.mapSize.y - 1) + Vector3.up*2.5f + Vector3.forward*tileSize/5 + Vector3.left*tileSize/2;
+        Vector3 doorPosition = CoordToPosition(map.mapSize.x - 4, map.mapSize.y - 1) + Vector3.up*2.5f + Vector3.forward*tileSize/4 + Vector3.left*tileSize/2;
         Transform door = Instantiate(doorPrefab, doorPosition, Quaternion.Euler(0f,0f,90f)) as Transform;
         door.parent = mapHolder;
 
@@ -324,7 +328,7 @@ public struct Coord
 public class BabyRoom
 {
     public Coord mapSize;
-    [Range(0, 0.2f)]
+    [Range(0, 1f)]
     public float obstaclePercent;
     public int seed;
 
