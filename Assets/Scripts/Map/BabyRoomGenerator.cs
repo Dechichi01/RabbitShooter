@@ -79,13 +79,20 @@ public class BabyRoomGenerator : MonoBehaviour
         Transform door = Instantiate(doorPrefab, doorPosition, Quaternion.Euler(0f,0f,90f)) as Transform;
         door.parent = mapHolder;
 
-        Vector3 cribPosition = CoordToPosition(2, map.mapSize.y - 2) + Vector3.left*tileSize/2 + Vector3.forward*tileSize/2;
+        Vector3 cribPosition = CoordToPosition(babyCribPrefab.spawnTile.x, babyCribPrefab.spawnTile.y) + babyCribPrefab.spawnOffset;
+        Obstacle babyCrib = Instantiate(babyCribPrefab, cribPosition, Quaternion.Euler(babyCribPrefab.spawnRotation)) as Obstacle;
+        babyCrib.transform.parent = mapHolder;
+        Debug.Log(allOpenCoords.Count);
+        babyCrib.OccupyTiles(ref allOpenCoords);
+        Debug.Log(allOpenCoords.Count);
+        //babyCrib.OccupyTiles(ref allOpenCoords);
+        /*Vector3 cribPosition = CoordToPosition(2, map.mapSize.y - 2) + Vector3.left*tileSize/2 + Vector3.forward*tileSize/2;
         Transform babyCrib = Instantiate(babyCribPrefab, cribPosition, Quaternion.Euler(0f,90f,0f)) as Transform;
         babyCrib.parent = mapHolder;
 
         for (int x = 0; x < 4; x++)
             for (int y = map.mapSize.y -1; y > map.mapSize.y - 4; y--)
-                allOpenCoords.Remove(new Coord(x, y));
+                allOpenCoords.Remove(new Coord(x, y));*/
     }
 
     private void InstantiateNavMask(Transform mapHolder)
@@ -144,7 +151,7 @@ public class BabyRoomGenerator : MonoBehaviour
             obstacleMap[randomCoord.x, randomCoord.y] = true;
             currentObstacleCount++;
 
-            if (randomCoord != map.mapCentre && MapIsFullyAccessible(obstacleMap, currentObstacleCount))
+            if (randomCoord != map.mapCentre /*&& MapIsFullyAccessible(obstacleMap, currentObstacleCount)*/)
             {
                 Vector3 obstaclePosition = CoordToPosition(randomCoord.x, randomCoord.y);
 

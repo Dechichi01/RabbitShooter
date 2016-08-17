@@ -5,15 +5,15 @@ using System.Collections.Generic;
 public class Obstacle : MonoBehaviour {
 
     public Coord spawnTile;
-    public Vector2 spawnOffset;
+    public Vector3 spawnOffset;
     public Vector3 spawnRotation;
     public int xTilesToOccupy, ytilesToOccupy;
 
-    public void OccupyTiles(ref List<Coord> allOpenTiles)
+    public void OccupyTiles(ref List<Coord> allOpenCoords)
     {
-        Coord bottomLeftTile = new Coord(spawnTile.x - xTilesToOccupy / 2, spawnTile.y = ytilesToOccupy / 2);
-        for (int x = bottomLeftTile.x; x < bottomLeftTile.x + xTilesToOccupy; x++)
-            for (int y = bottomLeftTile.y; y > bottomLeftTile.y + ytilesToOccupy; y++)
-                allOpenTiles.Remove(new Coord(x, y));
+        for (int x = spawnTile.x - xTilesToOccupy; x < spawnTile.x + xTilesToOccupy; x++)
+            for (int y = spawnTile.y - ytilesToOccupy; y < spawnTile.y + ytilesToOccupy; y++)
+                allOpenCoords.Remove(new Coord(x, y));
     }
+
 }
