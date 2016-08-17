@@ -1,11 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 
 public class Spawner : MonoBehaviour {
 
 	public Wave[] waves;
 	public Enemy enemy;
+
+    public WanderAI shadowPrefab;
 
     LivingEntity playerEntity;
     Transform playerT;
@@ -47,24 +50,15 @@ public class Spawner : MonoBehaviour {
     
     IEnumerator SpawnEnemy()
     {
-        float spawnDelay = 1.5f;
+        yield return new WaitForSeconds(1.5f);
 
-        //Transform spawnTile = map.GetRandomOpenTile();
-        Transform spawnTile = map.GetEdgeTile();
-
-        Material tileMat = spawnTile.GetComponent<Renderer>().material;
-
-        float spawnTimer = 0;
-
-        while (spawnTimer < spawnDelay)
-        {
-            spawnTimer += Time.deltaTime;
-            yield return null; //wait for a frame
-        }
-
-        Enemy spawnedEnemy = PoolManager.instance.ReuseObject(enemy.gameObject, spawnTile.position + Vector3.up, Quaternion.identity).GetComponent<Enemy>();
+        Vector3 startSpawnPostition = map.GetEdgeTile().position;
+        Enemy spawnedEnemy = PoolManager.instance.ReuseObject(enemy.gameObject, startSpawnPostition + Vector3.up, Quaternion.identity).GetComponent<Enemy>();
         spawnedEnemy.OnDeath += OnEnemyDeath;
         spawnedEnemy.SetCharacteristics(currentWave.moveSpeed, currentWave.hitsToKillPlayer, currentWave.enemyHealth, currentWave.skinColor);
+        spawnedEnemy.StartChase();
+        //
+
     }
 
 	void OnEnemyDeath(){

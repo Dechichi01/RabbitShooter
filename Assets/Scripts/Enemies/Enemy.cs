@@ -6,7 +6,7 @@ public class Enemy : LivingEntity {
 	public enum State {Idle, Chasing, Attacking};
 	State currentState;
 
-	NavMeshAgent pathFinder;
+	NavMeshAgent navAgent;
 	Transform target;
 	LivingEntity targetLivingEntity;
 	Material skinMaterial;
@@ -31,7 +31,8 @@ public class Enemy : LivingEntity {
 
     void Awake()
     {
-        pathFinder = GetComponent<NavMeshAgent>();
+        navAgent = GetComponent<NavMeshAgent>();
+        navAgent.enabled = false;
 
         if (GameObject.FindGameObjectWithTag("Player") != null)
         {
@@ -47,16 +48,21 @@ public class Enemy : LivingEntity {
 
 	override protected void Start () {
 		base.Start();
+        //StartChase();
+	}
 
-		if (hasTarget){
-
-			currentState = State.Chasing;
-			targetLivingEntity.OnDeath += OnTargetDeath; //That's how we subscribe a method to a System.Action method (OnDeath)
+    public void StartChase()
+    {
+        navAgent.enabled = true;
+        if (hasTarget)
+        {
+            currentState = State.Chasing;
+            targetLivingEntity.OnDeath += OnTargetDeath; //That's how we subscribe a method to a System.Action method (OnDeath)
 
             if (!stationary)
-			    StartCoroutine(UpdatePath());
-		}
-	}
+                StartCoroutine(UpdatePath());
+        }
+    }
 
 	void Update () {
 		if (hasTarget){
@@ -93,7 +99,7 @@ public class Enemy : LivingEntity {
 
     public void SetCharacteristics(float moveSpeed, int hitsToKillPlayer, float enemyHealth, Color skinColor)
     {
-        pathFinder.speed = moveSpeed;
+        navAgent.speed = moveSpeed;
         if (hasTarget)
             damage = Mathf.Ceil(targetLivingEntity.startingHealth / hitsToKillPlayer);
 
@@ -107,7 +113,7 @@ public class Enemy : LivingEntity {
 	IEnumerator Attack(){
 
 		currentState = State.Attacking;
-		pathFinder.enabled = false;
+		navAgent.enabled = false;
 
 		Vector3 originalPosition = transform.position;
 		Vector3 dirToTarget = (target.position - transform.position).normalized;
@@ -135,7 +141,7 @@ public class Enemy : LivingEntity {
 
 		//skinMaterial.color = originalColour;
 		currentState = State.Chasing;
-		pathFinder.enabled = true;
+		navAgent.enabled = true;
 	}
 
 	IEnumerator UpdatePath(){            
@@ -146,7 +152,7 @@ public class Enemy : LivingEntity {
 				Vector3 dirToTarget = (target.position - transform.position).normalized;
 				Vector3 targetPosition = target.position - dirToTarget*(myCollisionRadius + targetCollisionRadius + attackDistanceThreshold/2);
 				if (!dead){
-					pathFinder.SetDestination(targetPosition);	
+					navAgent.SetDestination(targetPosition);	
 				}
 			}
 			yield return new WaitForSeconds(refreashRate);
