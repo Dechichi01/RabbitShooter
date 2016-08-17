@@ -8,12 +8,7 @@ public class BabyRoomGenerator : MonoBehaviour
 
     public Transform tilePrefab;
     public Transform wallPrefab;
-    public Obstacle babyCribPrefab;
-    public Transform shelve;
-    public Transform doorPrefab;
-    public Transform couchPrefab;
-    public Transform pillowMount;
-    public Transform evilPileOfToys;
+    public List<Obstacle> furnitures;
     public Transform navmeshFloor;
     public Transform navmeshMaskPrefab;
     public Transform boundary;
@@ -75,24 +70,13 @@ public class BabyRoomGenerator : MonoBehaviour
 
     private void InstantiateFurniture(Transform mapHolder)
     {
-        Vector3 doorPosition = CoordToPosition(map.mapSize.x - 4, map.mapSize.y - 1) + Vector3.up*2.5f + Vector3.forward*tileSize/4 + Vector3.left*tileSize/2;
-        Transform door = Instantiate(doorPrefab, doorPosition, Quaternion.Euler(0f,0f,90f)) as Transform;
-        door.parent = mapHolder;
-
-        Vector3 cribPosition = CoordToPosition(babyCribPrefab.spawnTile.x, babyCribPrefab.spawnTile.y) + babyCribPrefab.spawnOffset;
-        Obstacle babyCrib = Instantiate(babyCribPrefab, cribPosition, Quaternion.Euler(babyCribPrefab.spawnRotation)) as Obstacle;
-        babyCrib.transform.parent = mapHolder;
-        Debug.Log(allOpenCoords.Count);
-        babyCrib.OccupyTiles(ref allOpenCoords);
-        Debug.Log(allOpenCoords.Count);
-        //babyCrib.OccupyTiles(ref allOpenCoords);
-        /*Vector3 cribPosition = CoordToPosition(2, map.mapSize.y - 2) + Vector3.left*tileSize/2 + Vector3.forward*tileSize/2;
-        Transform babyCrib = Instantiate(babyCribPrefab, cribPosition, Quaternion.Euler(0f,90f,0f)) as Transform;
-        babyCrib.parent = mapHolder;
-
-        for (int x = 0; x < 4; x++)
-            for (int y = map.mapSize.y -1; y > map.mapSize.y - 4; y--)
-                allOpenCoords.Remove(new Coord(x, y));*/
+        for (int i = 0; i < furnitures.Count; i++)
+        {
+            Vector3 position = CoordToPosition(furnitures[i].spawnTile.x, furnitures[i].spawnTile.y) + furnitures[i].spawnOffset;
+            Obstacle furniture = Instantiate(furnitures[i], position, Quaternion.Euler(furnitures[i].spawnRotation)) as Obstacle;
+            furniture.transform.parent = mapHolder;
+            furniture.OccupyTiles(ref allOpenCoords);
+        }        
     }
 
     private void InstantiateNavMask(Transform mapHolder)
