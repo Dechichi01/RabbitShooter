@@ -12,9 +12,13 @@ public class ObstacleEditor : Editor {
         BabyRoomGenerator babyRoom = FindObjectOfType<BabyRoomGenerator>().GetComponent<BabyRoomGenerator>();
         if (GUILayout.Button("Regenerate Map"))
         {
-            EditorUtility.SetDirty(obstacle.gameObject);
-            Object prefab = Resources.Load("Prefabs/BabyCrib");
-            babyRoom.furnitures[0] = PrefabUtility.ReplacePrefab(obstacle.gameObject, prefab).GetComponent<Obstacle>();
+            string prefabName = obstacle.gameObject.name.Replace("(Clone)", "");
+            Object prefab = Resources.Load("Prefabs/" + prefabName);
+
+            for (int i = 0; i < babyRoom.furnitures.Length; i++)
+                if (babyRoom.furnitures[i].gameObject == prefab)
+                    babyRoom.furnitures[i] = PrefabUtility.ReplacePrefab(obstacle.gameObject, prefab).GetComponent<Obstacle>();
+
             babyRoom.GenerateMap();
         }
 

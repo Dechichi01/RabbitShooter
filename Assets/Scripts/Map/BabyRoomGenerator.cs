@@ -8,7 +8,7 @@ public class BabyRoomGenerator : MonoBehaviour
 
     public Transform tilePrefab;
     public Transform wallPrefab;
-    public List<Obstacle> furnitures;
+    public Obstacle[] furnitures;
     public Transform navmeshFloor;
     public Transform navmeshMaskPrefab;
     public Transform boundary;
@@ -70,7 +70,7 @@ public class BabyRoomGenerator : MonoBehaviour
 
     private void InstantiateFurniture(Transform mapHolder)
     {
-        for (int i = 0; i < furnitures.Count; i++)
+        for (int i = 0; i < furnitures.Length; i++)
         {
             Vector3 position = CoordToPosition(furnitures[i].spawnTile.x, furnitures[i].spawnTile.y) + furnitures[i].spawnOffset;
             Obstacle furniture = Instantiate(furnitures[i], position, Quaternion.Euler(furnitures[i].spawnRotation)) as Obstacle;
