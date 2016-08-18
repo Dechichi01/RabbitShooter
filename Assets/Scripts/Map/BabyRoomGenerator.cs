@@ -76,7 +76,8 @@ public class BabyRoomGenerator : MonoBehaviour
             Obstacle furniture = Instantiate(furnitures[i], position, Quaternion.Euler(furnitures[i].spawnRotation)) as Obstacle;
             furniture.transform.parent = mapHolder;
             furniture.OccupyTiles(ref allOpenCoords);
-        }        
+        }
+
     }
 
     private void InstantiateNavMask(Transform mapHolder)

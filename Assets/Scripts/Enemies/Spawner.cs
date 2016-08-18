@@ -8,8 +8,6 @@ public class Spawner : MonoBehaviour {
 	public Wave[] waves;
 	public Enemy enemy;
 
-    public WanderAI shadowPrefab;
-
     LivingEntity playerEntity;
     Transform playerT;
     GameUI gameUI;
@@ -22,6 +20,7 @@ public class Spawner : MonoBehaviour {
 
 	int enemiesRemainingAlive;
     private BabyRoomGenerator map;
+    private List<SpawnObject> spawnObjects;
 
     public event System.Action<int> OnNewWave;
 
@@ -33,6 +32,13 @@ public class Spawner : MonoBehaviour {
         playerEntity.OnDeath += OnPlayerDeath;
         //
         map = FindObjectOfType<BabyRoomGenerator>();
+        spawnObjects = new List<SpawnObject>();
+        for (int i = 0; i < map.furnitures.Length; i++)
+        {
+            if (map.furnitures[i] is SpawnObject)
+                spawnObjects.Add((SpawnObject) map.furnitures[i]);
+        }
+
 		NextWave();
         //
         gameUI = FindObjectOfType<GameUI>();
@@ -52,7 +58,7 @@ public class Spawner : MonoBehaviour {
     {
         yield return new WaitForSeconds(1.5f);
 
-        Vector3 startSpawnPostition = map.GetEdgeTile().position;
+        Vector3 startSpawnPostition = spawnObjects[Random.Range(0, spawnObjects.Count)].spawnPoint;
         Enemy spawnedEnemy = PoolManager.instance.ReuseObject(enemy.gameObject, startSpawnPostition + Vector3.up, Quaternion.identity).GetComponent<Enemy>();
         spawnedEnemy.OnDeath += OnEnemyDeath;
         spawnedEnemy.SetCharacteristics(currentWave.moveSpeed, currentWave.hitsToKillPlayer, currentWave.enemyHealth, currentWave.skinColor);
