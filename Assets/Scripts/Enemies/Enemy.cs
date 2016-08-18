@@ -7,7 +7,8 @@ public class Enemy : LivingEntity {
 	State currentState;
 
 	NavMeshAgent navAgent;
-	Transform target;
+	Transform playerTarget;
+    Vector3 babyCribPos;
 	LivingEntity targetLivingEntity;
 	Material skinMaterial;
 
@@ -24,9 +25,11 @@ public class Enemy : LivingEntity {
 
 	float nextAttackTime;
 	float myCollisionRadius;
-	float targetCollisionRadius;
+	float secondaryTargetCollisionRadius;
+    float primaryTargetCollisionRadius;
 
-	bool hasTarget;
+    bool chasingPrimaryTarget;
+    bool hasTarget;
     public bool stationary;
 
     void Awake()
@@ -34,15 +37,26 @@ public class Enemy : LivingEntity {
         navAgent = GetComponent<NavMeshAgent>();
         navAgent.enabled = false;
 
+        myCollisionRadius = GetComponent<CapsuleCollider>().radius;
+
+        if (GameObject.FindGameObjectWithTag("BabyCrib") != null)
+        {
+            chasingPrimaryTarget = true;
+            hasTarget = true;
+
+            babyCribPos = GameObject.FindGameObjectWithTag("BabyCrib").transform.position;
+            Debug.Log(babyCribPos);
+            primaryTargetCollisionRadius = 3.5f;
+        }
+
         if (GameObject.FindGameObjectWithTag("Player") != null)
         {
             hasTarget = true;
-            
-            target = GameObject.FindGameObjectWithTag("Player").transform;
-            targetLivingEntity = target.GetComponent<LivingEntity>();
+            playerTarget = GameObject.FindGameObjectWithTag("Player").transform;
+            targetLivingEntity = playerTarget.GetComponent<LivingEntity>();
 
             myCollisionRadius = GetComponent<CapsuleCollider>().radius;
-            targetCollisionRadius = target.GetComponent<CapsuleCollider>().radius;
+            secondaryTargetCollisionRadius = playerTarget.GetComponent<CapsuleCollider>().radius;
         }
     }
 
@@ -67,9 +81,11 @@ public class Enemy : LivingEntity {
 	void Update () {
 		if (hasTarget){
 			if (Time.time > nextAttackTime){
-				float sqrDstToTarget = (target.position - transform.position).sqrMagnitude; //take the distance between two positions in sqrMagnitude
+                Vector3 targetPos = (chasingPrimaryTarget) ? babyCribPos : playerTarget.position;
+				float sqrDstToTarget = (targetPos - transform.position).sqrMagnitude; //take the distance between two positions in sqrMagnitude
 
-				if (sqrDstToTarget < Mathf.Pow(attackDistanceThreshold + myCollisionRadius + targetCollisionRadius, 2)){
+                float radius = (chasingPrimaryTarget) ? primaryTargetCollisionRadius : secondaryTargetCollisionRadius;
+				if (sqrDstToTarget < Mathf.Pow(attackDistanceThreshold + myCollisionRadius + radius, 2)){
 					nextAttackTime = Time.time + timeBetweenAttacks;
                     AudioManager.instance.PlaySound("Enemy Attack", transform.position);
 					StartCoroutine(Attack());	
@@ -115,9 +131,10 @@ public class Enemy : LivingEntity {
 		currentState = State.Attacking;
 		navAgent.enabled = false;
 
-		Vector3 originalPosition = transform.position;
-		Vector3 dirToTarget = (target.position - transform.position).normalized;
-		Vector3 attackPosition = target.position - dirToTarget*(myCollisionRadius);
+        Vector3 targetPos = (chasingPrimaryTarget) ? babyCribPos : playerTarget.position;
+        Vector3 originalPosition = transform.position;
+		Vector3 dirToTarget = (targetPos - transform.position).normalized;
+		Vector3 attackPosition = targetPos - dirToTarget*(myCollisionRadius);
 
 		float attackSpeed = 3;
 		float percent = 0;
@@ -127,7 +144,7 @@ public class Enemy : LivingEntity {
 
 		while (percent <= 1){
 
-			if (percent >= 0.5 && !hasAppliedDamage){
+			if (!chasingPrimaryTarget && percent >= 0.5 && !hasAppliedDamage){
 				hasAppliedDamage = true;
 				targetLivingEntity.TakeDamage(damage);
 			}
@@ -147,10 +164,12 @@ public class Enemy : LivingEntity {
 	IEnumerator UpdatePath(){            
         float refreashRate = 0.5f;
 
-		while(hasTarget){
+        Vector3 currentTargetPos = (chasingPrimaryTarget) ? babyCribPos : playerTarget.position;
+        float radius = (chasingPrimaryTarget) ? primaryTargetCollisionRadius : secondaryTargetCollisionRadius;
+        while (hasTarget){
 			if (currentState == State.Chasing){
-				Vector3 dirToTarget = (target.position - transform.position).normalized;
-				Vector3 targetPosition = target.position - dirToTarget*(myCollisionRadius + targetCollisionRadius + attackDistanceThreshold/2);
+				Vector3 dirToTarget = (currentTargetPos - transform.position).normalized;
+				Vector3 targetPosition = currentTargetPos - dirToTarget*(myCollisionRadius + radius + attackDistanceThreshold/2);
 				if (!dead){
 					navAgent.SetDestination(targetPosition);	
 				}
