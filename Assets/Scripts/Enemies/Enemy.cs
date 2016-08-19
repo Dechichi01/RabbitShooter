@@ -7,8 +7,11 @@ public class Enemy : LivingEntity {
 	State currentState;
 
 	NavMeshAgent navAgent;
-	Transform playerTarget;
-    float playerCollisionRadius;
+
+	Target currentTarget;
+    Target playerTarget;
+    Target babyCrib;
+
 	LivingEntity targetLivingEntity;
 	Material skinMaterial;
 
@@ -38,17 +41,24 @@ public class Enemy : LivingEntity {
         if (GameObject.FindGameObjectWithTag("Player") != null)
         {
             hasTarget = true;
-            playerTarget = GameObject.FindGameObjectWithTag("Player").transform;
-            targetLivingEntity = playerTarget.GetComponent<LivingEntity>();
+            Transform playerT = GameObject.FindGameObjectWithTag("Player").transform;
+            playerTarget = new Target(playerT, Vector2.one*playerT.GetComponent<CapsuleCollider>().radius);
+            targetLivingEntity = playerTarget.thisTransform.GetComponent<LivingEntity>();
 
             myCollisionRadius = GetComponent<CapsuleCollider>().radius;
-            playerCollisionRadius = playerTarget.GetComponent<CapsuleCollider>().radius;
         }
+
+        if (FindObjectOfType<BabyCrib>() !=null)
+        {
+            babyCrib = new Target(FindObjectOfType<BabyCrib>().transform, new Vector2(2,3));
+            Debug.Log(FindObjectOfType<BabyCrib>().transform.name);
+        }
+
+        currentTarget = babyCrib;
     }
 
 	override protected void Start () {
 		base.Start();
-        //StartChase();
 	}
 
     public void StartChase()
@@ -66,9 +76,9 @@ public class Enemy : LivingEntity {
 	void Update () {
 		if (hasTarget){
 			if (Time.time > nextAttackTime){
-				float sqrDstToTarget = (playerTarget.position - transform.position).sqrMagnitude; //take the distance between two positions in sqrMagnitude
+				float sqrDstToTarget = (currentTarget.thisTransform.position - transform.position).sqrMagnitude; //take the distance between two positions in sqrMagnitude
 
-				if (sqrDstToTarget < Mathf.Pow(attackDistanceThreshold + myCollisionRadius + playerCollisionRadius, 2)){
+				if (sqrDstToTarget < Mathf.Pow(attackDistanceThreshold + myCollisionRadius + currentTarget.minPlaneDist.x, 2)){
 					nextAttackTime = Time.time + timeBetweenAttacks;
                     AudioManager.instance.PlaySound("Enemy Attack", transform.position);
 					StartCoroutine(Attack());	
@@ -103,10 +113,6 @@ public class Enemy : LivingEntity {
             damage = Mathf.Ceil(targetLivingEntity.startingHealth / hitsToKillPlayer);
 
         startingHealth = enemyHealth;
-        //Material universalSkin = GetComponent<Renderer>().sharedMaterial;
-        //universalSkin.color = skinColor;
-        //originalColour = universalSkin.color;
-        //skinMaterial = GetComponent<Renderer>().material;
 
     }
 	IEnumerator Attack(){
@@ -115,14 +121,13 @@ public class Enemy : LivingEntity {
 		navAgent.enabled = false;
 
         Vector3 originalPosition = transform.position;
-		Vector3 dirToTarget = (playerTarget.position - transform.position).normalized;
-		Vector3 attackPosition = playerTarget.position- dirToTarget*(myCollisionRadius);
+		Vector3 dirToTarget = (currentTarget.thisTransform.position - transform.position).normalized;
+		Vector3 attackPosition = currentTarget.thisTransform.position - dirToTarget*(myCollisionRadius);
 
 		float attackSpeed = 3;
 		float percent = 0;
 		bool hasAppliedDamage = false;
 
-		//skinMaterial.color = Color.red;
 
 		while (percent <= 1){
 
@@ -148,8 +153,8 @@ public class Enemy : LivingEntity {
 
         while (hasTarget){
 			if (currentState == State.Chasing){
-				Vector3 dirToTarget = (playerTarget.position - transform.position).normalized;
-				Vector3 targetPosition = playerTarget.position - dirToTarget*(myCollisionRadius + playerCollisionRadius + attackDistanceThreshold/2);
+				Vector3 dirToTarget = (currentTarget.thisTransform.position - transform.position).normalized;
+				Vector3 targetPosition = currentTarget.thisTransform.position - dirToTarget*(myCollisionRadius + currentTarget.minPlaneDist.x + attackDistanceThreshold/2);
 				if (!dead){
 					navAgent.SetDestination(targetPosition);	
 				}
@@ -158,3 +163,16 @@ public class Enemy : LivingEntity {
 		}
 	}
 }
+
+public class Target
+{
+    public Transform thisTransform;
+    public Vector2 minPlaneDist;
+
+    public Target(Transform thisTransform, Vector2 minPlaneDist)
+    {
+        this.thisTransform = thisTransform;
+        this.minPlaneDist = minPlaneDist;
+    }
+}
+
