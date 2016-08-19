@@ -22,7 +22,9 @@ public class Enemy : LivingEntity {
                 if (Time.time > nextAttackTime)
                 {
                     float sqrDstToTarget = (currentTarget.thisTransform.position - transform.position).sqrMagnitude; //take the distance between two positions in sqrMagnitude
-                    if (sqrDstToTarget < Mathf.Pow(attackDistanceThreshold + myCollisionRadius + currentTarget.minPlaneDist.x, 2))
+                    float horizontalDist = Mathf.Pow(attackDistanceThreshold + myCollisionRadius + currentTarget.minPlaneDist.x, 2);
+                    float verticalDist = Mathf.Pow(attackDistanceThreshold + myCollisionRadius + currentTarget.minPlaneDist.y, 2);
+                    if (sqrDstToTarget < horizontalDist || sqrDstToTarget < verticalDist)
                     {
                         nextAttackTime = Time.time + timeBetweenAttacks;
                         return true;
