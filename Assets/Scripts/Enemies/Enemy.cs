@@ -11,9 +11,9 @@ public class Enemy : LivingEntity {
     /// Used by the AI BT
     /// </summary>
     [Task]
-    public bool shouldChaseCrib { get { return (!(currentState == State.Attacking) /*&& notBeingAttacked*/) /*playerIsDizzy*/; } }
+    public bool shouldChaseCrib { get { return (!(currentState == State.Attacking) && !isBeingAttacked) /*playerIsDizzy*/; } }
     [Task]
-    public bool shouldChasePlayer { get { return !shouldChaseCrib; } }
+    public bool shouldChasePlayer { get { return !shouldChaseCrib ; } }
     [Task]
     public bool canAttack { get
         {
@@ -87,6 +87,13 @@ public class Enemy : LivingEntity {
 	override protected void Start () {
 		base.Start();
 	}
+
+    protected override void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+            TakeHit(10, Vector3.zero, Vector3.zero);
+        base.Update();
+    }
 
     [Task]
     public void StartChase()
