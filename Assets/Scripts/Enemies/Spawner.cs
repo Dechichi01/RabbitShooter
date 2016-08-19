@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 
 public class Spawner : MonoBehaviour {
@@ -18,14 +19,8 @@ public class Spawner : MonoBehaviour {
 	float nextSpawnTime = 0f;
 
 	int enemiesRemainingAlive;
-    private MapGenerator map;
-
-    //
-    float timeBetweenCampingChecks = 2;
-    float campThresholdDist = 2.5f;
-    Vector3 campPositionOld;
-    bool isCamping;
-    //
+    private BabyRoomGenerator map;
+    private List<SpawnObject> spawnObjects;
 
     public event System.Action<int> OnNewWave;
 
@@ -33,12 +28,17 @@ public class Spawner : MonoBehaviour {
         PoolManager.instance.CreatePool(enemy.gameObject, 20);
         playerEntity = FindObjectOfType<Player>();
         playerT = playerEntity.GetComponent<Transform>();
-        //
-        campPositionOld = playerT.position;
+
         playerEntity.OnDeath += OnPlayerDeath;
-        StartCoroutine(CheckCamping());
         //
-        map = FindObjectOfType<MapGenerator>();
+        map = FindObjectOfType<BabyRoomGenerator>();
+        spawnObjects = new List<SpawnObject>();
+        for (int i = 0; i < map.furnitures.Length; i++)
+        {
+            if (map.furnitures[i] is SpawnObject)
+                spawnObjects.Add((SpawnObject) map.furnitures[i]);
+        }
+
 		NextWave();
         //
         gameUI = FindObjectOfType<GameUI>();
@@ -53,48 +53,18 @@ public class Spawner : MonoBehaviour {
             StartCoroutine(SpawnEnemy());
 		} 
 	}
-
-    IEnumerator CheckCamping()
-    {
-        while (true)
-        {
-            yield return new WaitForSeconds(timeBetweenCampingChecks);
-
-            if (playerT.position != null)
-            {
-                isCamping = (playerT.position - campPositionOld).sqrMagnitude < Mathf.Pow(campThresholdDist, 2);
-                campPositionOld = playerT.position;
-            }
-            
-        }
-    }
     
     IEnumerator SpawnEnemy()
     {
-        float spawnDelay = 1.5f;
-        float tileFlashSpeed = 4;
+        yield return new WaitForSeconds(1.5f);
 
-        Transform spawnTile = map.GetRandomOpenTile();
-        if (isCamping && playerT.position != null)
-            spawnTile = map.GetTileFromPosition(playerT.position);
-
-        Material tileMat = spawnTile.GetComponent<Renderer>().material;
-
-        Color initialColor = tileMat.color;
-        Color flashColor = Color.red;
-        float spawnTimer = 0;
-
-        while (spawnTimer < spawnDelay)
-        {
-            tileMat.color = Color.Lerp(initialColor, flashColor, Mathf.PingPong(spawnTimer * tileFlashSpeed, 1));
-
-            spawnTimer += Time.deltaTime;
-            yield return null; //wait for a frame
-        }
-
-        Enemy spawnedEnemy = PoolManager.instance.ReuseObject(enemy.gameObject, spawnTile.position + Vector3.up, Quaternion.identity).GetComponent<Enemy>();
+        Vector3 startSpawnPostition = spawnObjects[Random.Range(0, spawnObjects.Count)].spawnPoint;
+        Enemy spawnedEnemy = PoolManager.instance.ReuseObject(enemy.gameObject, startSpawnPostition + Vector3.up, Quaternion.identity).GetComponent<Enemy>();
         spawnedEnemy.OnDeath += OnEnemyDeath;
         spawnedEnemy.SetCharacteristics(currentWave.moveSpeed, currentWave.hitsToKillPlayer, currentWave.enemyHealth, currentWave.skinColor);
+        spawnedEnemy.StartChase();
+        //
+
     }
 
 	void OnEnemyDeath(){
