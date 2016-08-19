@@ -62,7 +62,7 @@ public class Spawner : MonoBehaviour {
         Enemy spawnedEnemy = PoolManager.instance.ReuseObject(enemy.gameObject, startSpawnPostition + Vector3.up, Quaternion.identity).GetComponent<Enemy>();
         spawnedEnemy.OnDeath += OnEnemyDeath;
         spawnedEnemy.SetCharacteristics(currentWave.moveSpeed, currentWave.hitsToKillPlayer, currentWave.enemyHealth, currentWave.skinColor);
-        spawnedEnemy.StartChase();
+        //spawnedEnemy.StartChase();
         //
 
     }

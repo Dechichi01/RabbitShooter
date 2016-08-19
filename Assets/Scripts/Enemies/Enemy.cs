@@ -1,10 +1,37 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Panda;
 
 public class Enemy : LivingEntity {
 
 	public enum State {Idle, Chasing, Attacking};
 	State currentState;
+
+    /// <summary>
+    /// Used by the AI BT
+    /// </summary>
+    [Task]
+    public bool shouldChaseCrib { get { return (!(currentState == State.Attacking) /*&& notBeingAttacked*/) /*playerIsDizzy*/; } }
+    [Task]
+    public bool shouldChasePlayer { get { return !shouldChaseCrib; } }
+    [Task]
+    public bool canAttack { get
+        {
+            if (hasTarget)
+            {
+                if (Time.time > nextAttackTime)
+                {
+                    float sqrDstToTarget = (currentTarget.thisTransform.position - transform.position).sqrMagnitude; //take the distance between two positions in sqrMagnitude
+                    if (sqrDstToTarget < Mathf.Pow(attackDistanceThreshold + myCollisionRadius + currentTarget.minPlaneDist.x, 2))
+                    {
+                        nextAttackTime = Time.time + timeBetweenAttacks;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
 
 	NavMeshAgent navAgent;
 
@@ -61,6 +88,7 @@ public class Enemy : LivingEntity {
 		base.Start();
 	}
 
+    [Task]
     public void StartChase()
     {
         navAgent.enabled = true;
@@ -70,22 +98,30 @@ public class Enemy : LivingEntity {
             targetLivingEntity.OnDeath += OnTargetDeath; //That's how we subscribe a method to a System.Action method (OnDeath)
 
             StartCoroutine(UpdatePath());
+            Task.current.Succeed();
         }
+        Task.current.Succeed();
     }
 
-	void Update () {
-		if (hasTarget){
-			if (Time.time > nextAttackTime){
-				float sqrDstToTarget = (currentTarget.thisTransform.position - transform.position).sqrMagnitude; //take the distance between two positions in sqrMagnitude
+    [Task]
+    void Attack(int target)
+    {
+        AudioManager.instance.PlaySound("Enemy Attack", transform.position);
+        StartCoroutine(AttackPlayer());
+        Task.current.Succeed();
+    }
 
-				if (sqrDstToTarget < Mathf.Pow(attackDistanceThreshold + myCollisionRadius + currentTarget.minPlaneDist.x, 2)){
-					nextAttackTime = Time.time + timeBetweenAttacks;
-                    AudioManager.instance.PlaySound("Enemy Attack", transform.position);
-					StartCoroutine(Attack());	
-				}	
-			}
-		}
-	}
+    [Task]
+    void SetTarget(int target)
+    {
+        if (target == 1)
+            currentTarget = babyCrib;
+        else
+            currentTarget = playerTarget;
+
+        Task.current.Succeed();
+    }
+
 
     public override void TakeHit(float damage, Vector3 hitPoint, Vector3 hitDirection)
     {
@@ -115,7 +151,7 @@ public class Enemy : LivingEntity {
         startingHealth = enemyHealth;
 
     }
-	IEnumerator Attack(){
+	IEnumerator AttackPlayer(){
 
 		currentState = State.Attacking;
 		navAgent.enabled = false;
