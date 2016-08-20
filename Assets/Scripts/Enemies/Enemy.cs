@@ -11,9 +11,15 @@ public class Enemy : LivingEntity {
     /// Used by the AI BT
     /// </summary>
     [Task]
-    public bool shouldChaseCrib { get { return (!(currentState == State.Attacking) && !isBeingAttacked) /*playerIsDizzy*/; } }
+    public bool shouldChaseCrib { get { return (!(currentState == State.Attacking) && (!isBeingAttacked || targetLivingEntity.isDizzy)); } }
     [Task]
-    public bool shouldChasePlayer { get { return !shouldChaseCrib ; } }
+    public bool shouldChasePlayer { get
+        {
+            if (targetLivingEntity.isDizzy)
+                isBeingAttacked = false;
+            return isBeingAttacked && !isAttacking;
+        }
+    }
     [Task]
     public bool canAttack { get
         {
@@ -59,6 +65,7 @@ public class Enemy : LivingEntity {
 	float myCollisionRadius;
 
     bool hasTarget;
+    bool isAttacking;
 
     void Awake()
     {
@@ -71,7 +78,7 @@ public class Enemy : LivingEntity {
         {
             hasTarget = true;
             Transform playerT = GameObject.FindGameObjectWithTag("Player").transform;
-            playerTarget = new Target(playerT, Vector2.one*playerT.GetComponent<CapsuleCollider>().radius);
+            playerTarget = new Target("Player", playerT, Vector2.one*playerT.GetComponent<CapsuleCollider>().radius);
             targetLivingEntity = playerTarget.thisTransform.GetComponent<LivingEntity>();
 
             myCollisionRadius = GetComponent<CapsuleCollider>().radius;
@@ -79,8 +86,7 @@ public class Enemy : LivingEntity {
 
         if (FindObjectOfType<BabyCrib>() !=null)
         {
-            babyCrib = new Target(FindObjectOfType<BabyCrib>().transform, new Vector2(2,3));
-            Debug.Log(FindObjectOfType<BabyCrib>().transform.name);
+            babyCrib = new Target("BabyCrib", FindObjectOfType<BabyCrib>().transform, new Vector2(2,3));
         }
 
         currentTarget = babyCrib;
@@ -93,7 +99,7 @@ public class Enemy : LivingEntity {
     protected override void Update()
     {
         if (Input.GetKeyDown(KeyCode.Space))
-            TakeHit(10, Vector3.zero, Vector3.zero);
+            TakeHit(0, Vector3.zero, Vector3.zero);
         base.Update();
     }
 
@@ -116,7 +122,11 @@ public class Enemy : LivingEntity {
     void Attack(int target)
     {
         AudioManager.instance.PlaySound("Enemy Attack", transform.position);
-        StartCoroutine(AttackPlayer());
+
+        if (target==1)
+            StartCoroutine(AttackBabyCrib());
+        else
+            StartCoroutine(AttackPlayer());
         Task.current.Succeed();
     }
 
@@ -162,6 +172,7 @@ public class Enemy : LivingEntity {
     }
 	IEnumerator AttackPlayer(){
 
+        isAttacking = true;
 		currentState = State.Attacking;
 		navAgent.enabled = false;
 
@@ -175,8 +186,7 @@ public class Enemy : LivingEntity {
 
 
 		while (percent <= 1){
-
-			if (percent >= 0.5 && !hasAppliedDamage){
+			if (currentTarget.name == "Player" && percent >= 0.5 && !hasAppliedDamage){
 				hasAppliedDamage = true;
 				targetLivingEntity.TakeDamage(damage);
 			}
@@ -191,9 +201,47 @@ public class Enemy : LivingEntity {
 		//skinMaterial.color = originalColour;
 		currentState = State.Chasing;
 		navAgent.enabled = true;
+        isAttacking = false;
 	}
 
-	IEnumerator UpdatePath(){            
+    IEnumerator AttackBabyCrib()
+    {
+
+        isAttacking = true;
+        currentState = State.Attacking;
+        navAgent.enabled = false;
+
+        Vector3 originalPosition = transform.position;
+        Vector3 dirToTarget = (currentTarget.thisTransform.position - transform.position).normalized;
+        Vector3 attackPosition = transform.position + dirToTarget*0.4f;
+
+        float attackSpeed = 3;
+        float percent = 0;
+        bool hasAppliedDamage = false;
+
+
+        while (percent <= 1)
+        {
+            if (currentTarget.name == "Player" && percent >= 0.5 && !hasAppliedDamage)
+            {
+                hasAppliedDamage = true;
+                targetLivingEntity.TakeDamage(damage);
+            }
+
+            percent += Time.deltaTime * attackSpeed;
+            float interpolation = (-Mathf.Pow(percent, 2) + percent) * 4;
+            transform.position = Vector3.Lerp(originalPosition, attackPosition, interpolation);
+
+            yield return null;
+        }
+
+        //skinMaterial.color = originalColour;
+        currentState = State.Chasing;
+        navAgent.enabled = true;
+        isAttacking = false;
+    }
+
+    IEnumerator UpdatePath(){            
         float refreashRate = 0.5f;
 
         while (hasTarget){
@@ -211,11 +259,13 @@ public class Enemy : LivingEntity {
 
 public class Target
 {
+    public string name;
     public Transform thisTransform;
     public Vector2 minPlaneDist;
 
-    public Target(Transform thisTransform, Vector2 minPlaneDist)
+    public Target(string name, Transform thisTransform, Vector2 minPlaneDist)
     {
+        this.name = name;
         this.thisTransform = thisTransform;
         this.minPlaneDist = minPlaneDist;
     }
