@@ -1,14 +1,52 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Panda;
 
 public class Enemy : LivingEntity {
 
 	public enum State {Idle, Chasing, Attacking};
 	State currentState;
 
+    /// <summary>
+    /// Used by the AI BT
+    /// </summary>
+    [Task]
+    public bool shouldChaseCrib { get { return (!(currentState == State.Attacking) && (!isBeingAttacked || targetLivingEntity.isDizzy)); } }
+    [Task]
+    public bool shouldChasePlayer { get
+        {
+            if (targetLivingEntity.isDizzy)
+                isBeingAttacked = false;
+            return isBeingAttacked && !isAttacking;
+        }
+    }
+    [Task]
+    public bool canAttack { get
+        {
+            if (hasTarget)
+            {
+                if (Time.time > nextAttackTime)
+                {
+                    float sqrDstToTarget = (currentTarget.thisTransform.position - transform.position).sqrMagnitude; //take the distance between two positions in sqrMagnitude
+                    float horizontalDist = Mathf.Pow(attackDistanceThreshold + myCollisionRadius + currentTarget.minPlaneDist.x, 2);
+                    float verticalDist = Mathf.Pow(attackDistanceThreshold + myCollisionRadius + currentTarget.minPlaneDist.y, 2);
+                    if (sqrDstToTarget < horizontalDist || sqrDstToTarget < verticalDist)
+                    {
+                        nextAttackTime = Time.time + timeBetweenAttacks;
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
 	NavMeshAgent navAgent;
-	Transform playerTarget;
-    Vector3 babyCribPos;
+
+	Target currentTarget;
+    Target playerTarget;
+    Target babyCrib;
+
 	LivingEntity targetLivingEntity;
 	Material skinMaterial;
 
@@ -25,12 +63,9 @@ public class Enemy : LivingEntity {
 
 	float nextAttackTime;
 	float myCollisionRadius;
-	float secondaryTargetCollisionRadius;
-    float primaryTargetCollisionRadius;
 
-    bool chasingPrimaryTarget;
     bool hasTarget;
-    public bool stationary;
+    bool isAttacking;
 
     void Awake()
     {
@@ -39,32 +74,36 @@ public class Enemy : LivingEntity {
 
         myCollisionRadius = GetComponent<CapsuleCollider>().radius;
 
-        if (GameObject.FindGameObjectWithTag("BabyCrib") != null)
-        {
-            chasingPrimaryTarget = true;
-            hasTarget = true;
-
-            babyCribPos = GameObject.FindGameObjectWithTag("BabyCrib").transform.position;
-            Debug.Log(babyCribPos);
-            primaryTargetCollisionRadius = 3.5f;
-        }
-
         if (GameObject.FindGameObjectWithTag("Player") != null)
         {
             hasTarget = true;
-            playerTarget = GameObject.FindGameObjectWithTag("Player").transform;
-            targetLivingEntity = playerTarget.GetComponent<LivingEntity>();
+            Transform playerT = GameObject.FindGameObjectWithTag("Player").transform;
+            playerTarget = new Target("Player", playerT, Vector2.one*playerT.GetComponent<CapsuleCollider>().radius);
+            targetLivingEntity = playerTarget.thisTransform.GetComponent<LivingEntity>();
 
             myCollisionRadius = GetComponent<CapsuleCollider>().radius;
-            secondaryTargetCollisionRadius = playerTarget.GetComponent<CapsuleCollider>().radius;
         }
+
+        if (FindObjectOfType<BabyCrib>() !=null)
+        {
+            babyCrib = new Target("BabyCrib", FindObjectOfType<BabyCrib>().transform, new Vector2(2,3));
+        }
+
+        currentTarget = babyCrib;
     }
 
 	override protected void Start () {
 		base.Start();
-        //StartChase();
 	}
 
+    protected override void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+            TakeHit(0, Vector3.zero, Vector3.zero);
+        base.Update();
+    }
+
+    [Task]
     public void StartChase()
     {
         navAgent.enabled = true;
@@ -73,26 +112,35 @@ public class Enemy : LivingEntity {
             currentState = State.Chasing;
             targetLivingEntity.OnDeath += OnTargetDeath; //That's how we subscribe a method to a System.Action method (OnDeath)
 
-            if (!stationary)
-                StartCoroutine(UpdatePath());
+            StartCoroutine(UpdatePath());
+            Task.current.Succeed();
         }
+        Task.current.Succeed();
     }
 
-	void Update () {
-		if (hasTarget){
-			if (Time.time > nextAttackTime){
-                Vector3 targetPos = (chasingPrimaryTarget) ? babyCribPos : playerTarget.position;
-				float sqrDstToTarget = (targetPos - transform.position).sqrMagnitude; //take the distance between two positions in sqrMagnitude
+    [Task]
+    void Attack(int target)
+    {
+        AudioManager.instance.PlaySound("Enemy Attack", transform.position);
 
-                float radius = (chasingPrimaryTarget) ? primaryTargetCollisionRadius : secondaryTargetCollisionRadius;
-				if (sqrDstToTarget < Mathf.Pow(attackDistanceThreshold + myCollisionRadius + radius, 2)){
-					nextAttackTime = Time.time + timeBetweenAttacks;
-                    AudioManager.instance.PlaySound("Enemy Attack", transform.position);
-					StartCoroutine(Attack());	
-				}	
-			}
-		}
-	}
+        if (target==1)
+            StartCoroutine(AttackBabyCrib());
+        else
+            StartCoroutine(AttackPlayer());
+        Task.current.Succeed();
+    }
+
+    [Task]
+    void SetTarget(int target)
+    {
+        if (target == 1)
+            currentTarget = babyCrib;
+        else
+            currentTarget = playerTarget;
+
+        Task.current.Succeed();
+    }
+
 
     public override void TakeHit(float damage, Vector3 hitPoint, Vector3 hitDirection)
     {
@@ -120,31 +168,25 @@ public class Enemy : LivingEntity {
             damage = Mathf.Ceil(targetLivingEntity.startingHealth / hitsToKillPlayer);
 
         startingHealth = enemyHealth;
-        //Material universalSkin = GetComponent<Renderer>().sharedMaterial;
-        //universalSkin.color = skinColor;
-        //originalColour = universalSkin.color;
-        //skinMaterial = GetComponent<Renderer>().material;
 
     }
-	IEnumerator Attack(){
+	IEnumerator AttackPlayer(){
 
+        isAttacking = true;
 		currentState = State.Attacking;
 		navAgent.enabled = false;
 
-        Vector3 targetPos = (chasingPrimaryTarget) ? babyCribPos : playerTarget.position;
         Vector3 originalPosition = transform.position;
-		Vector3 dirToTarget = (targetPos - transform.position).normalized;
-		Vector3 attackPosition = targetPos - dirToTarget*(myCollisionRadius);
+		Vector3 dirToTarget = (currentTarget.thisTransform.position - transform.position).normalized;
+		Vector3 attackPosition = currentTarget.thisTransform.position - dirToTarget*(myCollisionRadius);
 
 		float attackSpeed = 3;
 		float percent = 0;
 		bool hasAppliedDamage = false;
 
-		//skinMaterial.color = Color.red;
 
 		while (percent <= 1){
-
-			if (!chasingPrimaryTarget && percent >= 0.5 && !hasAppliedDamage){
+			if (currentTarget.name == "Player" && percent >= 0.5 && !hasAppliedDamage){
 				hasAppliedDamage = true;
 				targetLivingEntity.TakeDamage(damage);
 			}
@@ -159,17 +201,53 @@ public class Enemy : LivingEntity {
 		//skinMaterial.color = originalColour;
 		currentState = State.Chasing;
 		navAgent.enabled = true;
+        isAttacking = false;
 	}
 
-	IEnumerator UpdatePath(){            
+    IEnumerator AttackBabyCrib()
+    {
+
+        isAttacking = true;
+        currentState = State.Attacking;
+        navAgent.enabled = false;
+
+        Vector3 originalPosition = transform.position;
+        Vector3 dirToTarget = (currentTarget.thisTransform.position - transform.position).normalized;
+        Vector3 attackPosition = transform.position + dirToTarget*0.4f;
+
+        float attackSpeed = 3;
+        float percent = 0;
+        bool hasAppliedDamage = false;
+
+
+        while (percent <= 1)
+        {
+            if (currentTarget.name == "Player" && percent >= 0.5 && !hasAppliedDamage)
+            {
+                hasAppliedDamage = true;
+                targetLivingEntity.TakeDamage(damage);
+            }
+
+            percent += Time.deltaTime * attackSpeed;
+            float interpolation = (-Mathf.Pow(percent, 2) + percent) * 4;
+            transform.position = Vector3.Lerp(originalPosition, attackPosition, interpolation);
+
+            yield return null;
+        }
+
+        //skinMaterial.color = originalColour;
+        currentState = State.Chasing;
+        navAgent.enabled = true;
+        isAttacking = false;
+    }
+
+    IEnumerator UpdatePath(){            
         float refreashRate = 0.5f;
 
-        Vector3 currentTargetPos = (chasingPrimaryTarget) ? babyCribPos : playerTarget.position;
-        float radius = (chasingPrimaryTarget) ? primaryTargetCollisionRadius : secondaryTargetCollisionRadius;
         while (hasTarget){
 			if (currentState == State.Chasing){
-				Vector3 dirToTarget = (currentTargetPos - transform.position).normalized;
-				Vector3 targetPosition = currentTargetPos - dirToTarget*(myCollisionRadius + radius + attackDistanceThreshold/2);
+				Vector3 dirToTarget = (currentTarget.thisTransform.position - transform.position).normalized;
+				Vector3 targetPosition = currentTarget.thisTransform.position - dirToTarget*(myCollisionRadius + currentTarget.minPlaneDist.x + attackDistanceThreshold/2);
 				if (!dead){
 					navAgent.SetDestination(targetPosition);	
 				}
@@ -178,3 +256,18 @@ public class Enemy : LivingEntity {
 		}
 	}
 }
+
+public class Target
+{
+    public string name;
+    public Transform thisTransform;
+    public Vector2 minPlaneDist;
+
+    public Target(string name, Transform thisTransform, Vector2 minPlaneDist)
+    {
+        this.name = name;
+        this.thisTransform = thisTransform;
+        this.minPlaneDist = minPlaneDist;
+    }
+}
+

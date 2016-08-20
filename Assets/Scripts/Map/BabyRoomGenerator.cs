@@ -26,14 +26,16 @@ public class BabyRoomGenerator : MonoBehaviour
     [HideInInspector]
     public float tileSize = 2.4f;
 
-
     void Awake()
     {
+        if (!transform.FindChild("Generated Map"))
+            GenerateMap();
+        /*
         Spawner spawner = FindObjectOfType<Spawner>();
         if (spawner!= null)
             FindObjectOfType<Spawner>().OnNewWave += OnNewWave;
         else
-            GenerateMap();
+            GenerateMap();*/
     }
 
     public void GenerateMap()
@@ -74,6 +76,7 @@ public class BabyRoomGenerator : MonoBehaviour
         {
             Vector3 position = CoordToPosition(furnitures[i].spawnTile.x, furnitures[i].spawnTile.y) + furnitures[i].spawnOffset;
             Obstacle furniture = Instantiate(furnitures[i], position, Quaternion.Euler(furnitures[i].spawnRotation)) as Obstacle;
+
             furniture.transform.parent = mapHolder;
             furniture.OccupyTiles(ref allOpenCoords);
         }

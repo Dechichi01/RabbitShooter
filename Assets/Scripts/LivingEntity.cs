@@ -6,16 +6,28 @@ public class LivingEntity : PoolObject, IDamageable {
 	public float startingHealth;
 	public float health { get; protected set; }
 	protected bool dead;
-
 	public event System.Action OnDeath;
 
-	protected virtual void Start(){
+    protected bool isBeingAttacked;
+    private float beingAttackedDelay = 10;
+    private float timeToResetBeingAttacked;
+
+    public bool isDizzy;//used by the player
+
+    protected virtual void Start(){
 		health = startingHealth;
 	}
 
+    protected virtual void Update()
+    {
+        if (Time.time > timeToResetBeingAttacked)
+            isBeingAttacked = false;
+    }
+
     public virtual void TakeHit(float damage, Vector3 hitPoint, Vector3 hitDirection){
         //TODO: Some stuffs with hit
-        System.Random rand = new System.Random((int)Time.time);
+        isBeingAttacked = true;
+        timeToResetBeingAttacked = Time.time + beingAttackedDelay;
 
         TakeDamage(damage);
 	}

@@ -24,12 +24,12 @@ public class PlayerController : MonoBehaviour {
 
 	}
 
-    void Update()
+    public void Aim()
     {
         if (!isTurning)
             FindTarget();
 
-        if (currentTarget !=null)
+        if (currentTarget != null)
             Debug.DrawLine(player.transform.position, currentTarget.transform.position, Color.red);
     }
 
