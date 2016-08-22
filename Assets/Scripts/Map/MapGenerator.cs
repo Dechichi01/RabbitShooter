@@ -4,14 +4,16 @@ using System.Collections.Generic;
 
 public class MapGenerator : MonoBehaviour
 {
-    public BabyRoom map;
+    public Map map;
 
     public Transform tilePrefab;
     public Transform wallPrefab;
+    public Transform doorPrefab;
+    [Range (1,4)]
+    public int doorQuantity;
     public Obstacle[] furnitures;
     public Transform navmeshFloor;
     public Transform navmeshMaskPrefab;
-    public Transform boundary;
 
     public Transform[] obstaclePrefabs;
 
@@ -30,6 +32,8 @@ public class MapGenerator : MonoBehaviour
     {
         if (!transform.FindChild("Generated Map"))
             GenerateMap();
+
+        
         /*
         Spawner spawner = FindObjectOfType<Spawner>();
         if (spawner!= null)
@@ -65,7 +69,6 @@ public class MapGenerator : MonoBehaviour
         shuffledTileCoords = new Queue<Coord>(Utility.ShuffleArray(allOpenCoords.ToArray(), map.seed));
 
         InstantiateObstacles(mapHolder);
-        InstantiateBoundaries(mapHolder);
         InstantiateNavMask(mapHolder);
 
     }
@@ -80,7 +83,6 @@ public class MapGenerator : MonoBehaviour
             furniture.transform.parent = mapHolder;
             furniture.OccupyTiles(ref allOpenCoords);
         }
-
     }
 
     private void InstantiateNavMask(Transform mapHolder)
@@ -104,24 +106,6 @@ public class MapGenerator : MonoBehaviour
         navmeshFloor.localScale = new Vector3(maxMapSize.x, maxMapSize.y) * tileSize;//Navmesh floor = MaxMapsize
     }
 
-    private void InstantiateBoundaries(Transform mapHolder)
-    {
-        Transform boundaryLeft = Instantiate(boundary, Vector3.left * ((map.mapSize.x + maxMapSize.x) / 4f) * tileSize, Quaternion.identity) as Transform;
-        boundaryLeft.parent = mapHolder;
-        boundaryLeft.GetComponent<BoxCollider>().size = new Vector3((maxMapSize.x - map.mapSize.x) / 2f, 1, map.mapSize.y) * tileSize;
-
-        Transform boundaryRight = Instantiate(boundary, Vector3.right * ((map.mapSize.x + maxMapSize.x) / 4f) * tileSize, Quaternion.identity) as Transform;
-        boundaryRight.parent = mapHolder;
-        boundaryRight.GetComponent<BoxCollider>().size = new Vector3((maxMapSize.x - map.mapSize.x) / 2f, 1, map.mapSize.y) * tileSize;
-
-        Transform boundaryTop = Instantiate(boundary, Vector3.forward * ((map.mapSize.y + maxMapSize.y) / 4f) * tileSize, Quaternion.identity) as Transform;
-        boundaryTop.parent = mapHolder;
-        boundaryTop.GetComponent<BoxCollider>().size = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.mapSize.y) / 2f) * tileSize;
-
-        Transform boundaryBottom = Instantiate(boundary, Vector3.back * ((map.mapSize.y + maxMapSize.y) / 4f) * tileSize, Quaternion.identity) as Transform;
-        boundaryBottom.parent = mapHolder;
-        boundaryBottom.GetComponent<BoxCollider>().size = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.mapSize.y) / 2f) * tileSize;
-    }
 
     private void InstantiateObstacles(Transform mapHolder)
     {
@@ -179,17 +163,35 @@ public class MapGenerator : MonoBehaviour
     {
         for (int x = 0; x < map.mapSize.x; x++)
         {
-            Vector3 wallPosition = CoordToPosition(x, map.mapSize.y - 1) + Vector3.up*3 + Vector3.forward*tileSize/2;
-            Transform newWall = Instantiate(wallPrefab, wallPosition, Quaternion.identity) as Transform;
-            newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
-            newWall.parent = mapHolder;
-            allOpenCoords.Remove(new Coord(x, map.mapSize.y - 1));
+            if (doorPrefab.GetComponent<RoomDoor>().positionInMap == x)
+            {
+                Transform door = Instantiate(doorPrefab) as Transform;
+                float doorHeight = door.GetChild(0).GetChild(1).GetComponent<BoxCollider>().bounds.extents.y;
+                door.position = CoordToPosition(x, map.mapSize.y - 1) + Vector3.up * doorHeight + Vector3.forward * tileSize / 2;
+                door.localRotation = Quaternion.Euler(0f, 180f, 0f);
+                door.parent = mapHolder;
+                allOpenCoords.Remove(new Coord(x, map.mapSize.y -1));
+                allOpenCoords.Remove(new Coord(x+1, map.mapSize.y - 1));
+                x++;
+            }
+            else
+            {
+                Transform newWall = Instantiate(wallPrefab) as Transform;
+                float wallHeight = newWall.GetComponent<BoxCollider>().bounds.extents.y;
+                newWall.position = CoordToPosition(x, map.mapSize.y - 1) + Vector3.up * wallHeight + Vector3.forward * tileSize / 2;
+                newWall.rotation = Quaternion.identity;
+                newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
+                newWall.parent = mapHolder;
+                allOpenCoords.Remove(new Coord(x, map.mapSize.y - 1));
+            }
         }
 
         for (int x = 0; x < map.mapSize.x; x++)
         {
-            Vector3 wallPosition = CoordToPosition(x, 0) + Vector3.up * 3 - Vector3.forward * tileSize / 2;
-            Transform newWall = Instantiate(wallPrefab, wallPosition, Quaternion.identity) as Transform;
+            Transform newWall = Instantiate(wallPrefab) as Transform;
+            float wallHeight = newWall.GetComponent<BoxCollider>().bounds.extents.y;
+            newWall.position = CoordToPosition(x, 0) + Vector3.up * wallHeight - Vector3.forward * tileSize / 2;
+            newWall.rotation = Quaternion.identity;
             newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
             newWall.parent = mapHolder;
             allOpenCoords.Remove(new Coord(x, 0));
@@ -197,8 +199,10 @@ public class MapGenerator : MonoBehaviour
 
         for (int y = 0; y < map.mapSize.y; y++)
         {
-            Vector3 wallPosition = CoordToPosition(0, y) + Vector3.up * 3 - Vector3.right * tileSize / 2;
-            Transform newWall = Instantiate(wallPrefab, wallPosition, Quaternion.Euler(0f,90f,0f)) as Transform;
+            Transform newWall = Instantiate(wallPrefab) as Transform;
+            float wallHeight = newWall.GetComponent<BoxCollider>().bounds.extents.y;
+            newWall.position = CoordToPosition(0, y) + Vector3.up * wallHeight - Vector3.right * tileSize / 2;
+            newWall.rotation = Quaternion.Euler(0f, 90f, 0f);
             newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
             newWall.parent = mapHolder;
             allOpenCoords.Remove(new Coord(0, y));
@@ -206,8 +210,10 @@ public class MapGenerator : MonoBehaviour
 
         for (int y = 0; y < map.mapSize.y; y++)
         {
-            Vector3 wallPosition = CoordToPosition(map.mapSize.x - 1, y) + Vector3.up * 3 + Vector3.right * tileSize / 2;
-            Transform newWall = Instantiate(wallPrefab, wallPosition, Quaternion.Euler(0f, -90f, 0f)) as Transform;
+            Transform newWall = Instantiate(wallPrefab) as Transform;
+            float wallHeight = newWall.GetComponent<BoxCollider>().bounds.extents.y;
+            newWall.position = CoordToPosition(map.mapSize.x - 1, y) + Vector3.up * wallHeight + Vector3.right * tileSize / 2;
+            newWall.rotation = Quaternion.Euler(0f, -90f, 0f);
             newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
             newWall.parent = mapHolder;
             allOpenCoords.Remove(new Coord(map.mapSize.x - 1, y));
@@ -320,7 +326,7 @@ public struct Coord
 }
 
 [System.Serializable]
-public class BabyRoom
+public class Map
 {
     public Coord mapSize;
     [Range(0, 1f)]

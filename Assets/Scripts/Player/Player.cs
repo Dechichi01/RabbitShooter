@@ -71,4 +71,20 @@ public class Player : LivingEntity {
         base.Die();
     }
 
+    void OnTriggerEnter(Collider col)
+    {
+        if (col.CompareTag("DoorEntrance"))
+        {
+            col.transform.parent.GetComponent<RoomDoor>().OpenDoor();
+        }
+    }
+
+    void OnTriggerExit(Collider col)
+    {
+        if (col.CompareTag("DoorExit"))
+        {
+            col.transform.parent.GetComponent<RoomDoor>().CloseDoor();
+        }
+    }
+
 }

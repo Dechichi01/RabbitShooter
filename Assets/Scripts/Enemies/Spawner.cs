@@ -33,11 +33,6 @@ public class Spawner : MonoBehaviour {
         //
         map = FindObjectOfType<MapGenerator>();
         spawnObjects = new List<SpawnObject>();
-        for (int i = 0; i < map.furnitures.Length; i++)
-        {
-            if (map.furnitures[i] is SpawnObject)
-                spawnObjects.Add((SpawnObject) map.furnitures[i]);
-        }
 
 		NextWave();
         //
