@@ -13,15 +13,11 @@ public class CameraController : MonoBehaviour {
 
     private Vector3 smoothVelocity;
 
-    private Vector3 mapBottomEdge;
-
     LivingEntity targetLivingEntity;
     private bool hasTarget;
 
 	// Use this for initialization
 	void Start () {
-        BabyRoomGenerator mapGen = GameObject.FindGameObjectWithTag("Map").GetComponent<BabyRoomGenerator>();
-        mapBottomEdge = mapGen.CoordToPosition(0, 0) + Vector3.forward*mapGen.tileSize/2;
 
         if (playerT != null)
         {
@@ -43,8 +39,6 @@ public class CameraController : MonoBehaviour {
         if (hasTarget || editorMode)
         {
             transform.position = playerT.position + Vector3.up * verticalOffset + Vector3.back * horizontalOffset;
-            if (!editorMode && transform.position.z < mapBottomEdge.z)
-                transform.position = new Vector3(transform.position.x, transform.position.y, mapBottomEdge.z);
         }
     }
 

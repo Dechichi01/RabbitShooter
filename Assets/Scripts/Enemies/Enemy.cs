@@ -11,12 +11,10 @@ public class Enemy : LivingEntity {
     /// Used by the AI BT
     /// </summary>
     [Task]
-    public bool shouldChaseCrib { get { return (!(currentState == State.Attacking) && (!isBeingAttacked || targetLivingEntity.isDizzy)); } }
+    public bool shouldChaseCrib { get { return (!(currentState == State.Attacking) && (!isBeingAttacked)); } }
     [Task]
     public bool shouldChasePlayer { get
         {
-            if (targetLivingEntity.isDizzy)
-                isBeingAttacked = false;
             return isBeingAttacked && !isAttacking;
         }
     }
@@ -45,7 +43,6 @@ public class Enemy : LivingEntity {
 
 	Target currentTarget;
     Target playerTarget;
-    Target babyCrib;
 
 	LivingEntity targetLivingEntity;
 	Material skinMaterial;
@@ -84,12 +81,7 @@ public class Enemy : LivingEntity {
             myCollisionRadius = GetComponent<CapsuleCollider>().radius;
         }
 
-        if (FindObjectOfType<BabyCrib>() !=null)
-        {
-            babyCrib = new Target("BabyCrib", FindObjectOfType<BabyCrib>().transform, new Vector2(2,3));
-        }
-
-        currentTarget = babyCrib;
+        currentTarget = playerTarget;
     }
 
 	override protected void Start () {

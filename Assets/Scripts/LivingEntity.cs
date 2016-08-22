@@ -12,8 +12,6 @@ public class LivingEntity : PoolObject, IDamageable {
     private float beingAttackedDelay = 10;
     private float timeToResetBeingAttacked;
 
-    public bool isDizzy;//used by the player
-
     protected virtual void Start(){
 		health = startingHealth;
 	}

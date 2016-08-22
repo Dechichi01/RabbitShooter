@@ -31,29 +31,14 @@ public class Player : LivingEntity {
 
     protected override void Update()
     {
-        if (recoverTime < Time.time)
-        {
-            isDizzy = false;
-            animator.SetBool("isDizzy", false);
-        }
-        if (!isDizzy)
-        {
-            GetInputAndMove();
-            HandleTouchInput();
-            controller.Aim();
-        }
-        else
-            controller.Move(Vector3.zero);
+        GetInputAndMove();
+        HandleTouchInput();
+        controller.Aim();
+      
     }
 
     public override void TakeDamage(float damage)
     {
-        if (!isDizzy)
-        {
-            isDizzy = true;
-            animator.SetBool("isDizzy", true);
-            recoverTime = Time.time + recoverDelay;
-        }
         base.TakeDamage(damage);
     }
 

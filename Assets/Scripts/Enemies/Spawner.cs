@@ -19,7 +19,7 @@ public class Spawner : MonoBehaviour {
 	float nextSpawnTime = 0f;
 
 	int enemiesRemainingAlive;
-    private BabyRoomGenerator map;
+    private MapGenerator map;
     private List<SpawnObject> spawnObjects;
 
     public event System.Action<int> OnNewWave;
@@ -31,7 +31,7 @@ public class Spawner : MonoBehaviour {
 
         playerEntity.OnDeath += OnPlayerDeath;
         //
-        map = FindObjectOfType<BabyRoomGenerator>();
+        map = FindObjectOfType<MapGenerator>();
         spawnObjects = new List<SpawnObject>();
         for (int i = 0; i < map.furnitures.Length; i++)
         {

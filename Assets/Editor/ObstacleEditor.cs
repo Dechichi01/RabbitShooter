@@ -9,7 +9,7 @@ public class ObstacleEditor : Editor {
     {
         DrawDefaultInspector();
         Obstacle obstacle = target as Obstacle;
-        BabyRoomGenerator babyRoom = FindObjectOfType<BabyRoomGenerator>().GetComponent<BabyRoomGenerator>();
+        MapGenerator babyRoom = FindObjectOfType<MapGenerator>().GetComponent<MapGenerator>();
         if (GUILayout.Button("Regenerate Map"))
         {
             string prefabName = obstacle.gameObject.name.Replace("(Clone)", "");
