@@ -65,12 +65,14 @@ public class RoomsGenerator : MonoBehaviour {
 
     private void MatchExits(Exit oldExit, Exit newExit)
     {
-        Transform newModule = newExit.transform.parent.parent;
+        Transform newModule = newExit.Room;
         Vector3 forwardVectorToMatch = -oldExit.transform.forward;
         float angleToRotate = Azimuth(forwardVectorToMatch) - Azimuth(newExit.transform.forward);
         newModule.RotateAround(newExit.transform.position, Vector3.up, angleToRotate);
         Vector3 translation = oldExit.transform.position - newExit.transform.position;
         newModule.transform.position += translation;
+
+        DestroyImmediate(newExit.transform.parent.gameObject);
     }
 
     private Module GetRandomWithTag(Module[] modules, string tagToMatch)
@@ -78,9 +80,11 @@ public class RoomsGenerator : MonoBehaviour {
         List<Module> matchingModules = new List<Module>();
         for (int i = 0; i < modules.Length; i++)
         {
+            Debug.Log(modules[i].Tag);
             if (modules[i].Tag == tagToMatch)
                 matchingModules.Add(modules[i]);            
         }
+        Debug.Log(matchingModules.Count);
         return matchingModules[Random.Range(0, matchingModules.Count)];
     }
 

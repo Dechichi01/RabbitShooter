@@ -73,7 +73,7 @@ public class Player : LivingEntity {
 
     void OnTriggerEnter(Collider col)
     {
-        if (col.CompareTag("DoorEntrance"))
+        if (col.CompareTag("DoorEntrance") || col.CompareTag("DoorExit"))
         {
             col.transform.parent.GetComponent<RoomDoor>().OpenDoor();
         }
@@ -81,7 +81,7 @@ public class Player : LivingEntity {
 
     void OnTriggerExit(Collider col)
     {
-        if (col.CompareTag("DoorExit"))
+        if (col.CompareTag("DoorEntrance") || col.CompareTag("DoorExit"))
         {
             col.transform.parent.GetComponent<RoomDoor>().CloseDoor();
         }

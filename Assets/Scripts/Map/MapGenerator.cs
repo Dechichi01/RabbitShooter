@@ -2,13 +2,13 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class MapGenerator : MonoBehaviour
+public class MapGenerator : Module
 {
     public Map map;
 
     public Transform tilePrefab;
     public Transform wallPrefab;
-    public Transform doorPrefab;
+    public RoomDoor doorPrefab;
     [Range (1,4)]
     public int doorQuantity;
     public Obstacle[] furnitures;
@@ -161,15 +161,27 @@ public class MapGenerator : MonoBehaviour
 
     private void InstantiateWalls(Transform mapHolder)
     {
+        float[] doorPositions = new float[doorQuantity];
+        for (int i = 0; i < (doorQuantity+1)/2; i++)
+        {
+            doorPositions[i] = Random.Range(2, map.mapSize.x - 2);
+        }
+        for (int i = (doorQuantity + 1) / 2; i < doorQuantity; i++)
+        {
+            doorPositions[i] = Random.Range(2, map.mapSize.y - 2);
+        }
+
+        int index = 0;
         for (int x = 0; x < map.mapSize.x; x++)
         {
-            if (doorPrefab.GetComponent<RoomDoor>().positionInMap == x)
+            if (index < doorQuantity && doorPositions[index] == x)
             {
-                Transform door = Instantiate(doorPrefab) as Transform;
-                float doorHeight = door.GetChild(0).GetChild(1).GetComponent<BoxCollider>().bounds.extents.y;
-                door.position = CoordToPosition(x, map.mapSize.y - 1) + Vector3.up * doorHeight + Vector3.forward * tileSize / 2;
-                door.localRotation = Quaternion.Euler(0f, 180f, 0f);
-                door.parent = mapHolder;
+                RoomDoor door = Instantiate(doorPrefab) as RoomDoor;
+                float doorHeight = door.doorBC.bounds.extents.y;
+                door.transform.position = CoordToPosition(x, map.mapSize.y - 1) + Vector3.up * doorHeight + Vector3.forward * tileSize / 2;
+                door.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+                door.transform.parent = mapHolder;
+                door.connector.Room = transform;
                 allOpenCoords.Remove(new Coord(x, map.mapSize.y -1));
                 allOpenCoords.Remove(new Coord(x+1, map.mapSize.y - 1));
                 x++;
@@ -185,38 +197,84 @@ public class MapGenerator : MonoBehaviour
                 allOpenCoords.Remove(new Coord(x, map.mapSize.y - 1));
             }
         }
+        index++;
 
         for (int x = 0; x < map.mapSize.x; x++)
         {
-            Transform newWall = Instantiate(wallPrefab) as Transform;
-            float wallHeight = newWall.GetComponent<BoxCollider>().bounds.extents.y;
-            newWall.position = CoordToPosition(x, 0) + Vector3.up * wallHeight - Vector3.forward * tileSize / 2;
-            newWall.rotation = Quaternion.identity;
-            newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
-            newWall.parent = mapHolder;
-            allOpenCoords.Remove(new Coord(x, 0));
+            if (index < doorQuantity && doorPositions[index] == x)
+            {
+                RoomDoor door = Instantiate(doorPrefab) as RoomDoor;
+                float doorHeight = door.doorBC.bounds.extents.y;
+                door.transform.position = CoordToPosition(x, 0) + Vector3.up * doorHeight - Vector3.forward * tileSize / 2 + Vector3.right*tileSize;
+                door.transform.localRotation = Quaternion.identity;
+                door.transform.parent = mapHolder;
+                door.connector.Room = transform;
+                allOpenCoords.Remove(new Coord(x, 0));
+                allOpenCoords.Remove(new Coord(x+1, 0));
+                x++;
+            }
+            else
+            {
+                Transform newWall = Instantiate(wallPrefab) as Transform;
+                float wallHeight = newWall.GetComponent<BoxCollider>().bounds.extents.y;
+                newWall.position = CoordToPosition(x, 0) + Vector3.up * wallHeight - Vector3.forward * tileSize / 2;
+                newWall.rotation = Quaternion.identity;
+                newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
+                newWall.parent = mapHolder;
+                allOpenCoords.Remove(new Coord(x, 0));
+            }
         }
-
+        index++;
         for (int y = 0; y < map.mapSize.y; y++)
         {
-            Transform newWall = Instantiate(wallPrefab) as Transform;
-            float wallHeight = newWall.GetComponent<BoxCollider>().bounds.extents.y;
-            newWall.position = CoordToPosition(0, y) + Vector3.up * wallHeight - Vector3.right * tileSize / 2;
-            newWall.rotation = Quaternion.Euler(0f, 90f, 0f);
-            newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
-            newWall.parent = mapHolder;
-            allOpenCoords.Remove(new Coord(0, y));
+            if (index < doorQuantity && doorPositions[index] == y)
+            {
+                RoomDoor door = Instantiate(doorPrefab) as RoomDoor;
+                float doorHeight = door.doorBC.bounds.extents.y;
+                door.transform.position = CoordToPosition(0, y) + Vector3.up * doorHeight - Vector3.right * tileSize / 2;
+                door.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
+                door.transform.parent = mapHolder;
+                door.connector.Room = transform;
+                allOpenCoords.Remove(new Coord(0, y));
+                allOpenCoords.Remove(new Coord(0, y+1));
+                y++;
+            }
+            else
+            {
+                Transform newWall = Instantiate(wallPrefab) as Transform;
+                float wallHeight = newWall.GetComponent<BoxCollider>().bounds.extents.y;
+                newWall.position = CoordToPosition(0, y) + Vector3.up * wallHeight - Vector3.right * tileSize / 2;
+                newWall.rotation = Quaternion.Euler(0f, 90f, 0f);
+                newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
+                newWall.parent = mapHolder;
+                allOpenCoords.Remove(new Coord(0, y));
+            }
         }
-
+        index++;
         for (int y = 0; y < map.mapSize.y; y++)
         {
-            Transform newWall = Instantiate(wallPrefab) as Transform;
-            float wallHeight = newWall.GetComponent<BoxCollider>().bounds.extents.y;
-            newWall.position = CoordToPosition(map.mapSize.x - 1, y) + Vector3.up * wallHeight + Vector3.right * tileSize / 2;
-            newWall.rotation = Quaternion.Euler(0f, -90f, 0f);
-            newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
-            newWall.parent = mapHolder;
-            allOpenCoords.Remove(new Coord(map.mapSize.x - 1, y));
+            if (index < doorQuantity && doorPositions[index] == y)
+            {
+                RoomDoor door = Instantiate(doorPrefab) as RoomDoor;
+                float doorHeight = door.doorBC.bounds.extents.y;
+                door.transform.position = CoordToPosition(map.mapSize.x - 1, y) + Vector3.up * doorHeight + Vector3.right * tileSize / 2 + Vector3.forward*tileSize;
+                door.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);
+                door.transform.parent = mapHolder;
+                door.connector.Room = transform;
+                allOpenCoords.Remove(new Coord(map.mapSize.x - 1, y));
+                allOpenCoords.Remove(new Coord(map.mapSize.x - 1, y+1));
+                y++;
+            }
+            else
+            {
+                Transform newWall = Instantiate(wallPrefab) as Transform;
+                float wallHeight = newWall.GetComponent<BoxCollider>().bounds.extents.y;
+                newWall.position = CoordToPosition(map.mapSize.x - 1, y) + Vector3.up * wallHeight + Vector3.right * tileSize / 2;
+                newWall.rotation = Quaternion.Euler(0f, -90f, 0f);
+                newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
+                newWall.parent = mapHolder;
+                allOpenCoords.Remove(new Coord(map.mapSize.x - 1, y));
+            }
         }
     }
 

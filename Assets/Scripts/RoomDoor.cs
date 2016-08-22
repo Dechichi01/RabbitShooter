@@ -4,7 +4,10 @@ using System.Collections;
 public class RoomDoor : MonoBehaviour {
 
     public Transform hinge;
-    public bool isOpen;
+    public BoxCollider doorBC;
+    public Exit connector;
+
+    private bool isOpen;
 
     public int positionInMap;
 

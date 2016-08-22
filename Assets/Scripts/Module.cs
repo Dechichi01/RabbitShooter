@@ -6,14 +6,14 @@ public class Module : MonoBehaviour {
 
     public string Tag;
 
-    private MeshCollider meshCol;
+    //private MeshCollider meshCol;
 
-    public Bounds bounds;
+    //public Bounds bounds;
 
     void Start()
     {
-        meshCol = transform.GetChild(1).FindChild("Floor").GetComponent<MeshCollider>();
-        bounds = meshCol.bounds;
+        //meshCol = transform.GetChild(1).FindChild("Floor").GetComponent<MeshCollider>();
+        //bounds = meshCol.bounds;
     }
 
     public List<Exit> GetExits()

@@ -3,6 +3,7 @@ using System.Collections;
 
 public class Exit : MonoBehaviour {
 
+    public Transform Room;
     public bool isConnected = false;
     public bool isDefaultConnection;
     public string[] connectTags;
