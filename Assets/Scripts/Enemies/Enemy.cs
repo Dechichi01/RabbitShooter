@@ -125,10 +125,7 @@ public class Enemy : LivingEntity {
     [Task]
     void SetTarget(int target)
     {
-        if (target == 1)
-            currentTarget = babyCrib;
-        else
-            currentTarget = playerTarget;
+        currentTarget = playerTarget;
 
         Task.current.Succeed();
     }
