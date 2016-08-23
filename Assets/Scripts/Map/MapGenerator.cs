@@ -135,8 +135,6 @@ public class MapGenerator : Module
                 currentObstacleCount--;
             }
         }
-
-        shuffledOpenTileCoords = new Queue<Coord>(Utility.ShuffleArray(allOpenCoords.ToArray(), map.seed));
     }
 
     private void GenerateFloor(Transform mapHolder)
@@ -144,22 +142,18 @@ public class MapGenerator : Module
         Mesh mesh = new Mesh();
         vertices = new List<Vector3>();
         int[] floorTriangles;
+        int[] wallTriangles;
 
         if (map.LRoom)
-            GenerateLFloor(ref mesh, out floorTriangles);
+        {
+            GenerateLFloor(out floorTriangles);
+            GenerateLWalls(out wallTriangles);
+        }
         else
-            GenerateQuadFloor(ref mesh, out floorTriangles);
-
-        int[] wallTriangles = new int[3 * 2 * 6*7];
-        int t = 0;
-        t = CreateCubeMesh(wallTriangles,t, vertices[0], (int) Mathf.Ceil(vertices[1].x - vertices[0].x)/2, 5, 1);
-        t = CreateCubeMesh(wallTriangles, t, vertices[0] + Vector3.right * (Mathf.Ceil(vertices[1].x - vertices[0].x) / 2 + 3), (int)Mathf.Ceil(vertices[1].x - vertices[0].x) / 2, 5, 1);
-        t = CreateCubeMesh(wallTriangles,t, vertices[1], 1, 5, (int)Mathf.Ceil(vertices[2].z - vertices[1].z));
-        t = CreateCubeMesh(wallTriangles, t, vertices[2], (int) Mathf.Ceil(vertices[3].x - vertices[2].x), 5, 1);
-        t = CreateCubeMesh(wallTriangles, t, vertices[3], 1, 5, (int)Mathf.Ceil(vertices[4].z - vertices[3].z));
-        t = CreateCubeMesh(wallTriangles, t, vertices[4], (int)Mathf.Ceil(vertices[5].x - vertices[4].x), 5, 1);
-        t = CreateCubeMesh(wallTriangles, t, vertices[5], 1, 5, (int)Mathf.Ceil(vertices[0].z - vertices[5].z));
-        //CreateCubeMesh(wallTriangles, vertices[1], )
+        {
+            GenerateQuadFloor(out floorTriangles);
+            GenerateQuadWalls(out wallTriangles);
+        }
 
         mesh.vertices = vertices.ToArray();
         mesh.subMeshCount = 2;
@@ -174,7 +168,7 @@ public class MapGenerator : Module
      
     }
 
-    private int CreateCubeMesh(int[] triangles, int t, Vector3 start, int xSize, int ySize, int zSize)
+    private int CreateCubeMesh(int[] triangles, int t, Vector3 start, float xSize, float ySize, float zSize)
     {
         bool inverted = xSize < 0 || ySize < 0 || zSize < 0;
         int v, initialVertexCount;
@@ -201,7 +195,7 @@ public class MapGenerator : Module
         return t;
     }
 
-    private void GenerateQuadFloor(ref Mesh mesh, out int[] triangles)
+    private void GenerateQuadFloor(out int[] triangles)
     {
         triangles = new int[6];
 
@@ -214,7 +208,7 @@ public class MapGenerator : Module
 
     }
 
-    private void GenerateLFloor(ref Mesh mesh, out int[] triangles)
+    private void GenerateLFloor(out int[] triangles)
     {
 
         triangles = new int[6 * 4];
@@ -233,6 +227,29 @@ public class MapGenerator : Module
         t = CreateQuad(triangles, t, 0, 1, 3, 2);
         t = CreateQuad(triangles, t, 0, 3, 5, 4);
 
+    }
+
+    private void GenerateLWalls(out int[] wallTriangles)
+    {
+        wallTriangles = new int[3 * 2 * 6 * 7];
+        int t = 0;
+        t = CreateCubeMesh(wallTriangles, t, vertices[0], vertices[1].x - vertices[0].x / 2, map.wallHeight, map.wallDepth);
+        t = CreateCubeMesh(wallTriangles, t, vertices[0] + Vector3.right * ((vertices[1].x - vertices[0].x) / 2 + 3), (vertices[1].x - vertices[0].x) / 2, map.wallHeight, map.wallDepth);
+        t = CreateCubeMesh(wallTriangles, t, vertices[1], map.wallDepth, map.wallHeight,vertices[2].z - vertices[1].z);
+        t = CreateCubeMesh(wallTriangles, t, vertices[2], vertices[3].x - vertices[2].x, map.wallHeight, map.wallDepth);
+        t = CreateCubeMesh(wallTriangles, t, vertices[3], map.wallDepth, map.wallHeight, vertices[4].z - vertices[3].z);
+        t = CreateCubeMesh(wallTriangles, t, vertices[4], vertices[5].x - vertices[4].x, map.wallHeight, map.wallDepth);
+        t = CreateCubeMesh(wallTriangles, t, vertices[5], map.wallDepth, map.wallHeight,vertices[0].z - vertices[5].z);
+    }
+
+    private void GenerateQuadWalls(out int[] wallTriangles)
+    {
+        wallTriangles = new int[3 * 2 * 6 * 4];
+        int t = 0;
+        t = CreateCubeMesh(wallTriangles, t, vertices[0], vertices[1].x - vertices[0].x, map.wallHeight, map.wallDepth);
+        t = CreateCubeMesh(wallTriangles, t, vertices[1], map.wallDepth, map.wallHeight, vertices[2].z - vertices[1].z + map.wallDepth);
+        t = CreateCubeMesh(wallTriangles, t, vertices[2], vertices[3].x - vertices[2].x, map.wallHeight, map.wallDepth);
+        t = CreateCubeMesh(wallTriangles, t, vertices[0], map.wallDepth, map.wallHeight, vertices[3].z - vertices[0].z);
     }
 
     private int CreateQuad(int[] triangles, int i, int v00, int v01, int v10, int v11, bool inverted = false)
@@ -325,7 +342,7 @@ public class MapGenerator : Module
         return tileMap[x, y];
     }
 
-    void OnDrawGizmos()
+    /*void OnDrawGizmos()
     {
         if (vertices != null)
         {
@@ -335,7 +352,7 @@ public class MapGenerator : Module
                 Gizmos.DrawSphere(vertices[i], 0.5f);
             }
         }
-    }
+    }*/
 
 }
 
@@ -378,6 +395,9 @@ public class Map
     public MapRotations mapRotation;
     public Coord corridorSize;
     public bool LRoom;
+
+    public float wallDepth = 0.5f;
+    public float wallHeight = 3.2f;
     [Range(0, 1f)]
     public float obstaclePercent;
     public int seed;
