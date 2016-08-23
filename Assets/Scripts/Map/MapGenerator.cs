@@ -5,9 +5,6 @@ using System.Collections.Generic;
 public class MapGenerator : Module
 {
     public Map map;
-
-    public Transform tilePrefab;
-    public Transform wallPrefab;
     public RoomDoor doorPrefab;
     [Range (1,4)]
     public int doorQuantity;
@@ -16,6 +13,8 @@ public class MapGenerator : Module
     public Transform navmeshMaskPrefab;
 
     public Transform[] obstaclePrefabs;
+
+    List<Vector3> vertices;
 
     public Vector2 maxMapSize;
 
@@ -28,11 +27,13 @@ public class MapGenerator : Module
     [HideInInspector]
     public float tileSize = 2.4f;
 
+    private MeshFilter floorMF;
+    private MeshRenderer floorRenderer;
+
     void Awake()
     {
         if (!transform.FindChild("Generated Map"))
             GenerateMap();
-
         
         /*
         Spawner spawner = FindObjectOfType<Spawner>();
@@ -44,32 +45,26 @@ public class MapGenerator : Module
 
     public void GenerateMap()
     {
-        tileMap = new Transform[map.mapSize.x, map.mapSize.y];
         GetComponent<BoxCollider>().size = new Vector3(map.mapSize.x * tileSize, .05f, map.mapSize.y * tileSize);
-
-        allTileCoords = new List<Coord>();//Store all the x,y coordinates in our map
-        //Store all coordinates
-        for (int x = 0; x < map.mapSize.x; x++)
-            for (int y = 0; y < map.mapSize.y; y++)
-                allTileCoords.Add(new Coord(x, y));
-
-        allOpenCoords = new List<Coord>(allTileCoords);//Copy of allTileCoords to be store only the open walls in the end
 
         string holderName = "Generated Map";
         if (transform.FindChild(holderName))
             DestroyImmediate(transform.FindChild(holderName).gameObject);
 
         Transform mapHolder = new GameObject(holderName).transform;
+        floorMF = mapHolder.gameObject.AddComponent<MeshFilter>();
+        floorRenderer = mapHolder.gameObject.AddComponent<MeshRenderer>();
         mapHolder.parent = transform;
 
-        InstantiateTiles(mapHolder);
-        InstantiateWalls(mapHolder);
+        GenerateFloor(mapHolder);
+        //InstantiateWalls(mapHolder);
         InstantiateFurniture(mapHolder);
-        //Store all shuffled coordinates
-        shuffledTileCoords = new Queue<Coord>(Utility.ShuffleArray(allOpenCoords.ToArray(), map.seed));
+
 
         InstantiateObstacles(mapHolder);
         InstantiateNavMask(mapHolder);
+
+        mapHolder.rotation = Quaternion.Euler(0f, (float)map.mapRotation, 0f);
 
     }
 
@@ -144,139 +139,112 @@ public class MapGenerator : Module
         shuffledOpenTileCoords = new Queue<Coord>(Utility.ShuffleArray(allOpenCoords.ToArray(), map.seed));
     }
 
-    private void InstantiateTiles(Transform mapHolder)
+    private void GenerateFloor(Transform mapHolder)
     {
-        for (int x = 0; x < map.mapSize.x; x++)
-        {
-            for (int y = 0; y < map.mapSize.y; y++)
-            {
-                Vector3 tilePosition = CoordToPosition(x, y);
-                Transform newTile = Instantiate(tilePrefab, tilePosition, Quaternion.Euler(Vector3.right * 90)) as Transform;
-                newTile.localScale = Vector3.one * tileSize;
-                newTile.parent = mapHolder;
-                tileMap[x, y] = newTile;
-            }
-        }
+        Mesh mesh = new Mesh();
+        vertices = new List<Vector3>();
+        int[] floorTriangles;
+
+        if (map.LRoom)
+            GenerateLFloor(ref mesh, out floorTriangles);
+        else
+            GenerateQuadFloor(ref mesh, out floorTriangles);
+
+        int[] wallTriangles = new int[3 * 2 * 6*7];
+        int t = 0;
+        t = CreateCubeMesh(wallTriangles,t, vertices[0], (int) Mathf.Ceil(vertices[1].x - vertices[0].x)/2, 5, 1);
+        t = CreateCubeMesh(wallTriangles, t, vertices[0] + Vector3.right * (Mathf.Ceil(vertices[1].x - vertices[0].x) / 2 + 3), (int)Mathf.Ceil(vertices[1].x - vertices[0].x) / 2, 5, 1);
+        t = CreateCubeMesh(wallTriangles,t, vertices[1], 1, 5, (int)Mathf.Ceil(vertices[2].z - vertices[1].z));
+        t = CreateCubeMesh(wallTriangles, t, vertices[2], (int) Mathf.Ceil(vertices[3].x - vertices[2].x), 5, 1);
+        t = CreateCubeMesh(wallTriangles, t, vertices[3], 1, 5, (int)Mathf.Ceil(vertices[4].z - vertices[3].z));
+        t = CreateCubeMesh(wallTriangles, t, vertices[4], (int)Mathf.Ceil(vertices[5].x - vertices[4].x), 5, 1);
+        t = CreateCubeMesh(wallTriangles, t, vertices[5], 1, 5, (int)Mathf.Ceil(vertices[0].z - vertices[5].z));
+        //CreateCubeMesh(wallTriangles, vertices[1], )
+
+        mesh.vertices = vertices.ToArray();
+        mesh.subMeshCount = 2;
+        mesh.SetTriangles(floorTriangles, 0);
+        mesh.SetTriangles(wallTriangles, 1);
+        mesh.RecalculateNormals();
+        floorMF.sharedMesh = mesh;
+        floorRenderer.materials = new Material[2] { map.floorMaterial, map.wallMaterial };
+
+        MeshCollider meshCol = mapHolder.gameObject.AddComponent<MeshCollider>();
+        meshCol.sharedMesh = mesh;
+     
     }
 
-    private void InstantiateWalls(Transform mapHolder)
+    private int CreateCubeMesh(int[] triangles, int t, Vector3 start, int xSize, int ySize, int zSize)
     {
-        float[] doorPositions = new float[doorQuantity];
-        for (int i = 0; i < (doorQuantity+1)/2; i++)
+        bool inverted = xSize < 0 || ySize < 0 || zSize < 0;
+        int v, initialVertexCount;
+        v = initialVertexCount = vertices.Count;
+
+        for (int i = 0; i < 2; i++)
         {
-            doorPositions[i] = Random.Range(2, map.mapSize.x - 2);
-        }
-        for (int i = (doorQuantity + 1) / 2; i < doorQuantity; i++)
-        {
-            doorPositions[i] = Random.Range(2, map.mapSize.y - 2);
+            vertices.Add(start + Vector3.up*ySize*i);
+            vertices.Add(start + Vector3.right * xSize + Vector3.up * ySize * i);
+            vertices.Add(start + Vector3.right * xSize+ Vector3.forward * zSize + Vector3.up * ySize * i);
+            vertices.Add(start + Vector3.forward*zSize + Vector3.up * ySize * i);
         }
 
-        int index = 0;
-        for (int x = 0; x < map.mapSize.x; x++)
+        int ring = 4;
+        for (int i = 0; i < ring-1; i++, v++)
         {
-            if (index < doorQuantity && doorPositions[index] == x)
-            {
-                RoomDoor door = Instantiate(doorPrefab) as RoomDoor;
-                float doorHeight = door.doorBC.bounds.extents.y;
-                door.transform.position = CoordToPosition(x, map.mapSize.y - 1) + Vector3.up * doorHeight + Vector3.forward * tileSize / 2;
-                door.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-                door.transform.parent = mapHolder;
-                door.connector.Room = transform;
-                allOpenCoords.Remove(new Coord(x, map.mapSize.y -1));
-                allOpenCoords.Remove(new Coord(x+1, map.mapSize.y - 1));
-                x++;
-            }
-            else
-            {
-                Transform newWall = Instantiate(wallPrefab) as Transform;
-                float wallHeight = newWall.GetComponent<BoxCollider>().bounds.extents.y;
-                newWall.position = CoordToPosition(x, map.mapSize.y - 1) + Vector3.up * wallHeight + Vector3.forward * tileSize / 2;
-                newWall.rotation = Quaternion.identity;
-                newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
-                newWall.parent = mapHolder;
-                allOpenCoords.Remove(new Coord(x, map.mapSize.y - 1));
-            }
+            t = CreateQuad(triangles, t, v, v + 1, v + ring, v + ring + 1, inverted);
         }
-        index++;
+        t = CreateQuad(triangles, t, v, initialVertexCount, v + ring, initialVertexCount + ring, inverted);
 
-        for (int x = 0; x < map.mapSize.x; x++)
-        {
-            if (index < doorQuantity && doorPositions[index] == x)
-            {
-                RoomDoor door = Instantiate(doorPrefab) as RoomDoor;
-                float doorHeight = door.doorBC.bounds.extents.y;
-                door.transform.position = CoordToPosition(x, 0) + Vector3.up * doorHeight - Vector3.forward * tileSize / 2 + Vector3.right*tileSize;
-                door.transform.localRotation = Quaternion.identity;
-                door.transform.parent = mapHolder;
-                door.connector.Room = transform;
-                allOpenCoords.Remove(new Coord(x, 0));
-                allOpenCoords.Remove(new Coord(x+1, 0));
-                x++;
-            }
-            else
-            {
-                Transform newWall = Instantiate(wallPrefab) as Transform;
-                float wallHeight = newWall.GetComponent<BoxCollider>().bounds.extents.y;
-                newWall.position = CoordToPosition(x, 0) + Vector3.up * wallHeight - Vector3.forward * tileSize / 2;
-                newWall.rotation = Quaternion.identity;
-                newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
-                newWall.parent = mapHolder;
-                allOpenCoords.Remove(new Coord(x, 0));
-            }
-        }
-        index++;
-        for (int y = 0; y < map.mapSize.y; y++)
-        {
-            if (index < doorQuantity && doorPositions[index] == y)
-            {
-                RoomDoor door = Instantiate(doorPrefab) as RoomDoor;
-                float doorHeight = door.doorBC.bounds.extents.y;
-                door.transform.position = CoordToPosition(0, y) + Vector3.up * doorHeight - Vector3.right * tileSize / 2;
-                door.transform.localRotation = Quaternion.Euler(0f, 90f, 0f);
-                door.transform.parent = mapHolder;
-                door.connector.Room = transform;
-                allOpenCoords.Remove(new Coord(0, y));
-                allOpenCoords.Remove(new Coord(0, y+1));
-                y++;
-            }
-            else
-            {
-                Transform newWall = Instantiate(wallPrefab) as Transform;
-                float wallHeight = newWall.GetComponent<BoxCollider>().bounds.extents.y;
-                newWall.position = CoordToPosition(0, y) + Vector3.up * wallHeight - Vector3.right * tileSize / 2;
-                newWall.rotation = Quaternion.Euler(0f, 90f, 0f);
-                newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
-                newWall.parent = mapHolder;
-                allOpenCoords.Remove(new Coord(0, y));
-            }
-        }
-        index++;
-        for (int y = 0; y < map.mapSize.y; y++)
-        {
-            if (index < doorQuantity && doorPositions[index] == y)
-            {
-                RoomDoor door = Instantiate(doorPrefab) as RoomDoor;
-                float doorHeight = door.doorBC.bounds.extents.y;
-                door.transform.position = CoordToPosition(map.mapSize.x - 1, y) + Vector3.up * doorHeight + Vector3.right * tileSize / 2 + Vector3.forward*tileSize;
-                door.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);
-                door.transform.parent = mapHolder;
-                door.connector.Room = transform;
-                allOpenCoords.Remove(new Coord(map.mapSize.x - 1, y));
-                allOpenCoords.Remove(new Coord(map.mapSize.x - 1, y+1));
-                y++;
-            }
-            else
-            {
-                Transform newWall = Instantiate(wallPrefab) as Transform;
-                float wallHeight = newWall.GetComponent<BoxCollider>().bounds.extents.y;
-                newWall.position = CoordToPosition(map.mapSize.x - 1, y) + Vector3.up * wallHeight + Vector3.right * tileSize / 2;
-                newWall.rotation = Quaternion.Euler(0f, -90f, 0f);
-                newWall.localScale = new Vector3(tileSize, newWall.localScale.y, newWall.localScale.z);
-                newWall.parent = mapHolder;
-                allOpenCoords.Remove(new Coord(map.mapSize.x - 1, y));
-            }
-        }
+        t = CreateQuad(triangles, t, initialVertexCount + ring, initialVertexCount + ring + 1, initialVertexCount + ring + 3, initialVertexCount + ring + 2, inverted);
+        t = CreateQuad(triangles, t, initialVertexCount, initialVertexCount + ring - 1, initialVertexCount + 1, initialVertexCount + 2, inverted);
+
+        return t;
     }
+
+    private void GenerateQuadFloor(ref Mesh mesh, out int[] triangles)
+    {
+        triangles = new int[6];
+
+        vertices.Add(CoordToPosition(0, 0));
+        vertices.Add(CoordToPosition(map.mapSize.x, 0));
+        vertices.Add(CoordToPosition(0, map.mapSize.y));
+        vertices.Add(CoordToPosition(map.mapSize.x, map.mapSize.y));
+
+        CreateQuad(triangles, 0, 0, 1, 2, 3);
+
+    }
+
+    private void GenerateLFloor(ref Mesh mesh, out int[] triangles)
+    {
+
+        triangles = new int[6 * 4];
+
+        int corridorX = (map.corridorSize.x > 0) ? map.corridorSize.x : (map.mapSize.x + map.corridorSize.x);
+        int corridorY = (map.corridorSize.y > 0) ? map.corridorSize.y : (map.mapSize.y + map.corridorSize.y);
+
+        vertices.Add(CoordToPosition(0, 0));
+        vertices.Add(CoordToPosition(map.mapSize.x, 0));
+        vertices.Add(CoordToPosition(map.mapSize.x, map.corridorSize.y));
+        vertices.Add(CoordToPosition(map.corridorSize.x, map.corridorSize.y));
+        vertices.Add(CoordToPosition(map.corridorSize.x, map.mapSize.y));
+        vertices.Add(CoordToPosition(0, map.mapSize.y));
+
+        int t = 0;
+        t = CreateQuad(triangles, t, 0, 1, 3, 2);
+        t = CreateQuad(triangles, t, 0, 3, 5, 4);
+
+    }
+
+    private int CreateQuad(int[] triangles, int i, int v00, int v01, int v10, int v11, bool inverted = false)
+    {
+        triangles[i] = v00;
+        triangles[i+1] = triangles[i+4] = (inverted)?v01:v10;
+        triangles[i+2] = triangles[i+3] = (inverted)?v10:v01;
+        triangles[i+5] = v11;
+
+        return i + 6;
+    }
+
 
     void OnNewWave(int waveNumber)
     {
@@ -357,6 +325,18 @@ public class MapGenerator : Module
         return tileMap[x, y];
     }
 
+    void OnDrawGizmos()
+    {
+        if (vertices != null)
+        {
+            Gizmos.color = Color.black;
+            for (int i = 0; i < vertices.Count; i++)
+            {
+                Gizmos.DrawSphere(vertices[i], 0.5f);
+            }
+        }
+    }
+
 }
 
 [System.Serializable]
@@ -386,7 +366,18 @@ public struct Coord
 [System.Serializable]
 public class Map
 {
+    public enum MapRotations {
+        N = 0,
+        S = 180,
+        W = 90,
+        E = 270
+    };
+    public Material floorMaterial;
+    public Material wallMaterial;
     public Coord mapSize;
+    public MapRotations mapRotation;
+    public Coord corridorSize;
+    public bool LRoom;
     [Range(0, 1f)]
     public float obstaclePercent;
     public int seed;
@@ -398,6 +389,4 @@ public class Map
             return new Coord(mapSize.x / 2, mapSize.y / 2);
         }
     }
-
-
 }
