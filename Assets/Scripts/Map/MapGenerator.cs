@@ -5,16 +5,13 @@ using System.Collections.Generic;
 public class MapGenerator : Module
 {
     public Map map;
-    public RoomDoor doorPrefab;
-    [Range (1,4)]
-    public int doorQuantity;
-    public Obstacle[] furnitures;
     public Transform navmeshFloor;
     public Transform navmeshMaskPrefab;
 
     public Transform[] obstaclePrefabs;
 
     List<Vector3> vertices;
+    Vector3[] baseVertices;
 
     public Vector2 maxMapSize;
 
@@ -34,13 +31,7 @@ public class MapGenerator : Module
     {
         if (!transform.FindChild("Generated Map"))
             GenerateMap();
-        
-        /*
-        Spawner spawner = FindObjectOfType<Spawner>();
-        if (spawner!= null)
-            FindObjectOfType<Spawner>().OnNewWave += OnNewWave;
-        else
-            GenerateMap();*/
+       
     }
 
     public void GenerateMap()
@@ -57,27 +48,11 @@ public class MapGenerator : Module
         mapHolder.parent = transform;
 
         GenerateFloor(mapHolder);
-        //InstantiateWalls(mapHolder);
-        InstantiateFurniture(mapHolder);
 
-
-        InstantiateObstacles(mapHolder);
         InstantiateNavMask(mapHolder);
 
         mapHolder.rotation = Quaternion.Euler(0f, (float)map.mapRotation, 0f);
 
-    }
-
-    private void InstantiateFurniture(Transform mapHolder)
-    {
-        for (int i = 0; i < furnitures.Length; i++)
-        {
-            Vector3 position = CoordToPosition(furnitures[i].spawnTile.x, furnitures[i].spawnTile.y) + furnitures[i].spawnOffset;
-            Obstacle furniture = Instantiate(furnitures[i], position, Quaternion.Euler(furnitures[i].spawnRotation)) as Obstacle;
-
-            furniture.transform.parent = mapHolder;
-            furniture.OccupyTiles(ref allOpenCoords);
-        }
     }
 
     private void InstantiateNavMask(Transform mapHolder)
@@ -99,42 +74,6 @@ public class MapGenerator : Module
         maskBottom.localScale = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.mapSize.y) / 2f) * tileSize;
 
         navmeshFloor.localScale = new Vector3(maxMapSize.x, maxMapSize.y) * tileSize;//Navmesh floor = MaxMapsize
-    }
-
-
-    private void InstantiateObstacles(Transform mapHolder)
-    {
-        System.Random prng = new System.Random(map.seed);
-
-        bool[,] obstacleMap = new bool[(int)map.mapSize.x, (int)map.mapSize.y];
-        //allOpenCoords = new List<Coord>(allTileCoords);
-
-        int obstacleCount = (int)(map.mapSize.x * map.mapSize.y * map.obstaclePercent);
-        int currentObstacleCount = 0;
-
-        for (int i = 0; i < obstacleCount; i++)
-        {
-            Coord randomCoord = GetRandomCoord();
-            obstacleMap[randomCoord.x, randomCoord.y] = true;
-            currentObstacleCount++;
-
-            if (randomCoord != map.mapCentre /*&& MapIsFullyAccessible(obstacleMap, currentObstacleCount)*/)
-            {
-                Vector3 obstaclePosition = CoordToPosition(randomCoord.x, randomCoord.y);
-
-                //Transform newObstacle = Instantiate(obstaclePrefab, obstaclePosition + Vector3.up * 0.5f, Quaternion.Euler(0f, Random.Range(0,360), 0f)) as Transform;
-                Transform newObstacle = Instantiate(obstaclePrefabs[Random.Range(0,obstaclePrefabs.Length)], obstaclePosition + Vector3.up*0.25f, Quaternion.Euler(0f, Random.Range(0,360), 0f)) as Transform;
-                //newObstacle.localScale = new Vector3(tileSize, tileSize, tileSize);
-                newObstacle.parent = mapHolder;//So it gets destroyed with the rest of the map
-
-                allOpenCoords.Remove(randomCoord);
-            }
-            else
-            {
-                obstacleMap[randomCoord.x, randomCoord.y] = false;
-                currentObstacleCount--;
-            }
-        }
     }
 
     private void GenerateFloor(Transform mapHolder)
@@ -173,9 +112,11 @@ public class MapGenerator : Module
         triangles = new int[6];
 
         vertices.Add(CoordToPosition(0, 0));
-        vertices.Add(CoordToPosition(map.mapSize.x, 0));
-        vertices.Add(CoordToPosition(map.mapSize.x, map.mapSize.y));
-        vertices.Add(CoordToPosition(0, map.mapSize.y));
+        vertices.Add(CoordToPosition(map.mapSize.x-1, 0));
+        vertices.Add(CoordToPosition(map.mapSize.x-1, map.mapSize.y-1));
+        vertices.Add(CoordToPosition(0, map.mapSize.y-1));
+
+        baseVertices = vertices.ToArray();
 
         CreateQuad(triangles, 0, 0, 1, 3, 2);
 
@@ -186,15 +127,14 @@ public class MapGenerator : Module
 
         triangles = new int[6 * 4];
 
-        int corridorX = (map.corridorSize.x > 0) ? map.corridorSize.x : (map.mapSize.x + map.corridorSize.x);
-        int corridorY = (map.corridorSize.y > 0) ? map.corridorSize.y : (map.mapSize.y + map.corridorSize.y);
-
         vertices.Add(CoordToPosition(0, 0));
-        vertices.Add(CoordToPosition(map.mapSize.x, 0));
-        vertices.Add(CoordToPosition(map.mapSize.x, map.corridorSize.y));
+        vertices.Add(CoordToPosition(map.mapSize.x-1, 0));
+        vertices.Add(CoordToPosition(map.mapSize.x-1, map.corridorSize.y));
         vertices.Add(CoordToPosition(map.corridorSize.x, map.corridorSize.y));
-        vertices.Add(CoordToPosition(map.corridorSize.x, map.mapSize.y));
-        vertices.Add(CoordToPosition(0, map.mapSize.y));
+        vertices.Add(CoordToPosition(map.corridorSize.x, map.mapSize.y-1));
+        vertices.Add(CoordToPosition(0, map.mapSize.y-1));
+
+        baseVertices = vertices.ToArray();
 
         int t = 0;
         t = CreateQuad(triangles, t, 0, 1, 3, 2);
@@ -211,32 +151,27 @@ public class MapGenerator : Module
         for (int i = 0; i < ring; i++)
             vertices.Add(vertices[i] + Vector3.up * map.wallHeight);
 
-        Vector3 centerPoint = vertices[0] + (vertices[2] - vertices[0]) / 2 + Vector3.up * map.wallHeight; ;
-        for (int i = 0; i < ring; i++)
-        {
-            Vector3 currentCP;
-            if (i == 3)
-                currentCP = vertices[0] + (vertices[3] - vertices[0]) / 2 + Vector3.up*map.wallHeight;
-            else if (i == 4)
-                currentCP = vertices[3] + (vertices[5] - vertices[3]) / 2 + Vector3.up*map.wallHeight;
-            else
-                currentCP = centerPoint;
 
-            vertices.Add(vertices[i + ring] + (currentCP - vertices[i + ring]).normalized * map.wallDepth);
+        Vector3 vec = Quaternion.AngleAxis(45f, vertices[0 + ring] - vertices[0]) * ((vertices[ring - 1] - vertices[0]).normalized * map.wallDepth);
+        vertices.Add(vertices[0 + ring] + vec);
+        for (int i = 1; i < ring; i++)
+        {
+            if (vertices[i] == baseVertices[3])
+                vec = Quaternion.AngleAxis(135f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized * map.wallDepth);
+            else
+                vec = Quaternion.AngleAxis(45f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized * map.wallDepth);
+            vertices.Add(vertices[i + ring] + vec);
         }
 
-        centerPoint = vertices[0] + (vertices[2] - vertices[0]) / 2;
-        for (int i = 0; i < ring; i++)
+        vec = Quaternion.AngleAxis(45f, vertices[0 + ring] - vertices[0]) * ((vertices[ring - 1] - vertices[0]).normalized * map.wallDepth);
+        vertices.Add(vertices[0] + vec);
+        for (int i = 1; i < ring; i++)
         {
-            Vector3 currentCP;
-            if (i == 3)
-                currentCP = vertices[0] + (vertices[3] - vertices[0]) / 2;
-            else if (i == 4)
-                currentCP = vertices[3] + (vertices[5] - vertices[3]) / 2;
+            if (vertices[i] == baseVertices[3])
+                vec = Quaternion.AngleAxis(135f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized * map.wallDepth);
             else
-                currentCP = centerPoint;
-
-            vertices.Add(vertices[i] + (currentCP - vertices[i]).normalized * map.wallDepth);
+                vec = Quaternion.AngleAxis(45f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized * map.wallDepth);
+            vertices.Add(vertices[i] + vec);
         }
 
         int t = 0;
@@ -261,12 +196,21 @@ public class MapGenerator : Module
         for (int i = 0; i < ring; i++)
             vertices.Add(vertices[i] + Vector3.up * map.wallHeight);
 
-        Vector3 centerPoint = vertices[0] + (vertices[2] - vertices[0]) / 2 + Vector3.up * map.wallHeight; ;
-        for (int i = 0; i < ring; i++)
-            vertices.Add(vertices[i + ring] + (centerPoint - vertices[i+ring]).normalized*map.wallDepth);
-        centerPoint = vertices[0] + (vertices[2] - vertices[0]) / 2;
-        for (int i = 0; i < ring; i++)
-            vertices.Add(vertices[i] + (centerPoint - vertices[i]).normalized * map.wallDepth);
+        Vector3 vec = Quaternion.AngleAxis(45f, vertices[0 + ring] - vertices[0]) * ((vertices[ring-1] - vertices[0]).normalized * map.wallDepth);
+        vertices.Add(vertices[0 + ring] + vec);
+        for (int i = 1; i < ring; i++)
+        {
+            vec = Quaternion.AngleAxis(45f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized*map.wallDepth);
+            vertices.Add(vertices[i + ring] + vec);
+        }
+
+        vec = Quaternion.AngleAxis(45f, vertices[0 + ring] - vertices[0]) * ((vertices[ring - 1] - vertices[0]).normalized * map.wallDepth);
+        vertices.Add(vertices[0] + vec);
+        for (int i = 1; i < ring; i++)
+        {
+            vec = Quaternion.AngleAxis(45f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized * map.wallDepth);
+            vertices.Add(vertices[i] + vec);
+        }
 
         int t = 0;
         for (int i = 0; i < ring-1; i++)
@@ -296,46 +240,7 @@ public class MapGenerator : Module
         GenerateMap();
     }
 
-    bool MapIsFullyAccessible(bool[,] obstacleMap, int currentObstacleCount)
-    {
-        bool[,] mapFlags = new bool[obstacleMap.GetLength(0), obstacleMap.GetLength(1)];//Keeps track of the already checked positions
-        Queue<Coord> queue = new Queue<Coord>();
-        queue.Enqueue(map.mapCentre);
-        mapFlags[map.mapCentre.x, map.mapCentre.y] = true;//Is empty (accessible)
-
-        int accessibleTileCount = 1;
-
-        while (queue.Count > 0)
-        {
-            Coord tile = queue.Dequeue();
-
-            for (int x = -1; x <= 1; x++)
-            {
-                for (int y = -1; y <= 1; y++)
-                {
-                    int neighbourX = tile.x + x;
-                    int neighbourY = tile.y + y;
-                    if (x == 0 || y == 0)
-                    {
-                        if (neighbourX >= 0 && neighbourX < obstacleMap.GetLength(0) && neighbourY >= 0 && neighbourY < obstacleMap.GetLength(1))
-                        {//Guarantees it is inside the obstacle map
-                            if (!mapFlags[neighbourX, neighbourY] && !obstacleMap[neighbourX, neighbourY])//We didn't check yet, and it's not an obstacle
-                            {
-                                mapFlags[neighbourX, neighbourY] = true;
-                                queue.Enqueue(new Coord(neighbourX, neighbourY));
-                                accessibleTileCount++;
-                            }
-                        }
-                    }
-                }
-            }        
-        }
-
-        int targetAccessibleTileCount = (int)(map.mapSize.x * map.mapSize.y - currentObstacleCount);//All the tiles that are not obstacles should be accessible
-        return targetAccessibleTileCount == accessibleTileCount;
-    }
-
-    public Vector3 CoordToPosition(int x, int y)
+    public Vector3 CoordToPosition(float x, float y)
     {
         return new Vector3(-map.mapSize.x / 2f + 0.5f + x, 0, -map.mapSize.y / 2f + 0.5f + y) *tileSize;
     }
@@ -347,17 +252,7 @@ public class MapGenerator : Module
         return randomCoord;
     }
 
-    public Transform GetRandomOpenTile()
-    {
-        Coord randomCoord = shuffledOpenTileCoords.Dequeue();
-        shuffledOpenTileCoords.Enqueue(randomCoord);
-        return tileMap[randomCoord.x,randomCoord.y];
-    }
 
-    public Transform GetEdgeTile()
-    {
-        return tileMap[map.mapSize.x - 2, map.mapSize.y / 2];
-    }
 
     public Transform GetTileFromPosition(Vector3 position)
     {
@@ -387,10 +282,10 @@ public class MapGenerator : Module
 [System.Serializable]
 public struct Coord
 {
-    public int x;
-    public int y;
+    public float x;
+    public float y;
 
-    public Coord(int _x, int _y)
+    public Coord(float _x, float _y)
     {
         x = _x;
         y = _y;

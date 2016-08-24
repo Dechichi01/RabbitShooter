@@ -20,7 +20,6 @@ public class Spawner : MonoBehaviour {
 
 	int enemiesRemainingAlive;
     private MapGenerator map;
-    private List<SpawnObject> spawnObjects;
 
     public event System.Action<int> OnNewWave;
 
@@ -32,7 +31,6 @@ public class Spawner : MonoBehaviour {
         playerEntity.OnDeath += OnPlayerDeath;
         //
         map = FindObjectOfType<MapGenerator>();
-        spawnObjects = new List<SpawnObject>();
 
 		NextWave();
         //
@@ -53,10 +51,9 @@ public class Spawner : MonoBehaviour {
     {
         yield return new WaitForSeconds(1.5f);
 
-        Vector3 startSpawnPostition = spawnObjects[Random.Range(0, spawnObjects.Count)].spawnPoint;
-        Enemy spawnedEnemy = PoolManager.instance.ReuseObject(enemy.gameObject, startSpawnPostition + Vector3.up, Quaternion.identity).GetComponent<Enemy>();
-        spawnedEnemy.OnDeath += OnEnemyDeath;
-        spawnedEnemy.SetCharacteristics(currentWave.moveSpeed, currentWave.hitsToKillPlayer, currentWave.enemyHealth, currentWave.skinColor);
+        //Enemy spawnedEnemy = PoolManager.instance.ReuseObject(enemy.gameObject, startSpawnPostition + Vector3.up, Quaternion.identity).GetComponent<Enemy>();
+        //spawnedEnemy.OnDeath += OnEnemyDeath;
+        //spawnedEnemy.SetCharacteristics(currentWave.moveSpeed, currentWave.hitsToKillPlayer, currentWave.enemyHealth, currentWave.skinColor);
         //spawnedEnemy.StartChase();
         //
 
