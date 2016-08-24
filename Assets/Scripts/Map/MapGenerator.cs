@@ -168,43 +168,16 @@ public class MapGenerator : Module
      
     }
 
-    private int CreateCubeMesh(int[] triangles, int t, Vector3 start, float xSize, float ySize, float zSize)
-    {
-        bool inverted = xSize < 0 || ySize < 0 || zSize < 0;
-        int v, initialVertexCount;
-        v = initialVertexCount = vertices.Count;
-
-        for (int i = 0; i < 2; i++)
-        {
-            vertices.Add(start + Vector3.up*ySize*i);
-            vertices.Add(start + Vector3.right * xSize + Vector3.up * ySize * i);
-            vertices.Add(start + Vector3.right * xSize+ Vector3.forward * zSize + Vector3.up * ySize * i);
-            vertices.Add(start + Vector3.forward*zSize + Vector3.up * ySize * i);
-        }
-
-        int ring = 4;
-        for (int i = 0; i < ring-1; i++, v++)
-        {
-            t = CreateQuad(triangles, t, v, v + 1, v + ring, v + ring + 1, inverted);
-        }
-        t = CreateQuad(triangles, t, v, initialVertexCount, v + ring, initialVertexCount + ring, inverted);
-
-        t = CreateQuad(triangles, t, initialVertexCount + ring, initialVertexCount + ring + 1, initialVertexCount + ring + 3, initialVertexCount + ring + 2, inverted);
-        t = CreateQuad(triangles, t, initialVertexCount, initialVertexCount + ring - 1, initialVertexCount + 1, initialVertexCount + 2, inverted);
-
-        return t;
-    }
-
     private void GenerateQuadFloor(out int[] triangles)
     {
         triangles = new int[6];
 
         vertices.Add(CoordToPosition(0, 0));
         vertices.Add(CoordToPosition(map.mapSize.x, 0));
-        vertices.Add(CoordToPosition(0, map.mapSize.y));
         vertices.Add(CoordToPosition(map.mapSize.x, map.mapSize.y));
+        vertices.Add(CoordToPosition(0, map.mapSize.y));
 
-        CreateQuad(triangles, 0, 0, 1, 2, 3);
+        CreateQuad(triangles, 0, 0, 1, 3, 2);
 
     }
 
@@ -231,25 +204,80 @@ public class MapGenerator : Module
 
     private void GenerateLWalls(out int[] wallTriangles)
     {
-        wallTriangles = new int[3 * 2 * 6 * 7];
+        wallTriangles = new int[3 * 2 * 18];
+        
+        int ring = vertices.Count;
+
+        for (int i = 0; i < ring; i++)
+            vertices.Add(vertices[i] + Vector3.up * map.wallHeight);
+
+        Vector3 centerPoint = vertices[0] + (vertices[2] - vertices[0]) / 2 + Vector3.up * map.wallHeight; ;
+        for (int i = 0; i < ring; i++)
+        {
+            Vector3 currentCP;
+            if (i == 3)
+                currentCP = vertices[0] + (vertices[3] - vertices[0]) / 2 + Vector3.up*map.wallHeight;
+            else if (i == 4)
+                currentCP = vertices[3] + (vertices[5] - vertices[3]) / 2 + Vector3.up*map.wallHeight;
+            else
+                currentCP = centerPoint;
+
+            vertices.Add(vertices[i + ring] + (currentCP - vertices[i + ring]).normalized * map.wallDepth);
+        }
+
+        centerPoint = vertices[0] + (vertices[2] - vertices[0]) / 2;
+        for (int i = 0; i < ring; i++)
+        {
+            Vector3 currentCP;
+            if (i == 3)
+                currentCP = vertices[0] + (vertices[3] - vertices[0]) / 2;
+            else if (i == 4)
+                currentCP = vertices[3] + (vertices[5] - vertices[3]) / 2;
+            else
+                currentCP = centerPoint;
+
+            vertices.Add(vertices[i] + (currentCP - vertices[i]).normalized * map.wallDepth);
+        }
+
         int t = 0;
-        t = CreateCubeMesh(wallTriangles, t, vertices[0], vertices[1].x - vertices[0].x / 2, map.wallHeight, map.wallDepth);
-        t = CreateCubeMesh(wallTriangles, t, vertices[0] + Vector3.right * ((vertices[1].x - vertices[0].x) / 2 + 3), (vertices[1].x - vertices[0].x) / 2, map.wallHeight, map.wallDepth);
-        t = CreateCubeMesh(wallTriangles, t, vertices[1], map.wallDepth, map.wallHeight,vertices[2].z - vertices[1].z);
-        t = CreateCubeMesh(wallTriangles, t, vertices[2], vertices[3].x - vertices[2].x, map.wallHeight, map.wallDepth);
-        t = CreateCubeMesh(wallTriangles, t, vertices[3], map.wallDepth, map.wallHeight, vertices[4].z - vertices[3].z);
-        t = CreateCubeMesh(wallTriangles, t, vertices[4], vertices[5].x - vertices[4].x, map.wallHeight, map.wallDepth);
-        t = CreateCubeMesh(wallTriangles, t, vertices[5], map.wallDepth, map.wallHeight,vertices[0].z - vertices[5].z);
+        for (int i = 0; i < ring - 1; i++)
+        {
+            t = CreateQuad(wallTriangles, t, i, i + 1, i + ring, i + ring + 1);
+            t = CreateQuad(wallTriangles, t, i + ring, i + ring + 1, i + ring * 2, i + ring * 2 + 1);
+            t = CreateQuad(wallTriangles, t, i + ring * 3, i + ring * 3 + 1, i + ring * 2, i + ring * 2 + 1, true);
+        }
+        t = CreateQuad(wallTriangles, t, 5, 0, 5 + ring, ring);
+        t = CreateQuad(wallTriangles, t, 5 + ring, ring, 5 + ring * 2, ring * 2);
+        t = CreateQuad(wallTriangles, t, 5 + ring * 3, ring * 3, 5 + ring * 2, ring * 2, true);
+
     }
 
     private void GenerateQuadWalls(out int[] wallTriangles)
     {
-        wallTriangles = new int[3 * 2 * 6 * 4];
+        wallTriangles = new int[3 * 2 * 12];
+
+        int ring = vertices.Count;
+
+        for (int i = 0; i < ring; i++)
+            vertices.Add(vertices[i] + Vector3.up * map.wallHeight);
+
+        Vector3 centerPoint = vertices[0] + (vertices[2] - vertices[0]) / 2 + Vector3.up * map.wallHeight; ;
+        for (int i = 0; i < ring; i++)
+            vertices.Add(vertices[i + ring] + (centerPoint - vertices[i+ring]).normalized*map.wallDepth);
+        centerPoint = vertices[0] + (vertices[2] - vertices[0]) / 2;
+        for (int i = 0; i < ring; i++)
+            vertices.Add(vertices[i] + (centerPoint - vertices[i]).normalized * map.wallDepth);
+
         int t = 0;
-        t = CreateCubeMesh(wallTriangles, t, vertices[0], vertices[1].x - vertices[0].x, map.wallHeight, map.wallDepth);
-        t = CreateCubeMesh(wallTriangles, t, vertices[1], map.wallDepth, map.wallHeight, vertices[2].z - vertices[1].z + map.wallDepth);
-        t = CreateCubeMesh(wallTriangles, t, vertices[2], vertices[3].x - vertices[2].x, map.wallHeight, map.wallDepth);
-        t = CreateCubeMesh(wallTriangles, t, vertices[0], map.wallDepth, map.wallHeight, vertices[3].z - vertices[0].z);
+        for (int i = 0; i < ring-1; i++)
+        {
+            t = CreateQuad(wallTriangles, t, i, i + 1, i + ring,i + ring + 1);
+            t = CreateQuad(wallTriangles, t, i + ring, i + ring + 1, i + ring * 2, i + ring * 2 + 1);
+            t = CreateQuad(wallTriangles, t, i + ring * 3, i + ring * 3 + 1, i + ring * 2, i + ring * 2 + 1, true);
+        }
+        t = CreateQuad(wallTriangles, t, 3, 0, 3 + ring, ring);
+        t = CreateQuad(wallTriangles, t, 3 + ring, ring, 3 + ring * 2, ring * 2);
+        t = CreateQuad(wallTriangles, t, 3 + ring * 3, ring * 3, 3 + ring * 2, ring * 2, true);
     }
 
     private int CreateQuad(int[] triangles, int i, int v00, int v01, int v10, int v11, bool inverted = false)
@@ -342,17 +370,17 @@ public class MapGenerator : Module
         return tileMap[x, y];
     }
 
-    /*void OnDrawGizmos()
+    void OnDrawGizmos()
     {
         if (vertices != null)
         {
             Gizmos.color = Color.black;
             for (int i = 0; i < vertices.Count; i++)
             {
-                Gizmos.DrawSphere(vertices[i], 0.5f);
+                Gizmos.DrawSphere(vertices[i], 0.1f);
             }
         }
-    }*/
+    }
 
 }
 
