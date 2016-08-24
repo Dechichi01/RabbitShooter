@@ -5,11 +5,12 @@ using System.Collections.Generic;
 public class MapGenerator : Module
 {
     public Map map;
+    public Door[] doors;
     public Transform navmeshFloor;
     public Transform navmeshMaskPrefab;
 
     List<Vector3> vertices;
-    Vector3[] baseVertices;
+    List<Vector3> baseVertices;
 
     public Vector2 maxMapSize;
 
@@ -108,7 +109,7 @@ public class MapGenerator : Module
         vertices.Add(CoordToPosition(map.mapSize.x-1, map.mapSize.y-1));
         vertices.Add(CoordToPosition(0, map.mapSize.y-1));
 
-        baseVertices = vertices.ToArray();
+        baseVertices = vertices;
 
         CreateQuad(triangles, 0, 0, 1, 3, 2);
 
@@ -126,7 +127,7 @@ public class MapGenerator : Module
         vertices.Add(CoordToPosition(map.corridorSize.x, map.mapSize.y-1));
         vertices.Add(CoordToPosition(0, map.mapSize.y-1));
 
-        baseVertices = vertices.ToArray();
+        baseVertices = vertices;
 
         int t = 0;
         t = CreateQuad(triangles, t, 0, 1, 3, 2);
@@ -181,8 +182,31 @@ public class MapGenerator : Module
 
     private void GenerateQuadWalls(out int[] wallTriangles)
     {
-        wallTriangles = new int[3 * 2 * 12];
+        wallTriangles = new int[3 * 2 * (12 + doors.Length*3)];
 
+        if (doors.Length > 0)
+        {
+            for (int i = 0; i < doors.Length; i++)
+            {
+                if (doors[i].offSetInRoom < map.mapSize.x)
+                {
+                    //vertices.Insert(1,CoordToPosition(doors[i].offSetInRoom,0));
+                    //vertices.Insert(2, CoordToPosition(doors[i].offSetInRoom + 1, 0));
+                }
+                else if (doors[i].offSetInRoom < map.mapSize.x + map.mapSize.y)
+                {
+
+                }
+                else if (doors[i].offSetInRoom < map.mapSize.x*2 + map.mapSize.y)
+                {
+
+                }
+                else if (doors[i].offSetInRoom < (map.mapSize.x + map.mapSize.y)*2)
+                {
+
+                }
+            }
+        }
         int ring = vertices.Count;
 
         for (int i = 0; i < ring; i++)
@@ -192,8 +216,12 @@ public class MapGenerator : Module
         vertices.Add(vertices[0 + ring] + vec);
         for (int i = 1; i < ring; i++)
         {
-            vec = Quaternion.AngleAxis(45f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized*map.wallDepth);
-            vertices.Add(vertices[i + ring] + vec);
+            if (baseVertices.Contains(vertices[i]))
+            {
+                vec = Quaternion.AngleAxis(45f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized * map.wallDepth);
+            }
+            else
+                vec = Quaternion.AngleAxis(90f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized * map.wallDepth); vertices.Add(vertices[i + ring] + vec);
         }
 
         vec = Quaternion.AngleAxis(45f, vertices[0 + ring] - vertices[0]) * ((vertices[ring - 1] - vertices[0]).normalized * map.wallDepth);
@@ -305,4 +333,11 @@ public class Map
             return new Coord(mapSize.x / 2, mapSize.y / 2);
         }
     }
+}
+
+[System.Serializable]
+public class Door
+{
+    public Transform roomDoorPrefab;
+    public float offSetInRoom;
 }
