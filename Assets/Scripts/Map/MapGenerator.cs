@@ -8,18 +8,10 @@ public class MapGenerator : Module
     public Transform navmeshFloor;
     public Transform navmeshMaskPrefab;
 
-    public Transform[] obstaclePrefabs;
-
     List<Vector3> vertices;
     Vector3[] baseVertices;
 
     public Vector2 maxMapSize;
-
-    List<Coord> allTileCoords;
-    List<Coord> allOpenCoords;
-    Queue<Coord> shuffledTileCoords;
-    Queue<Coord> shuffledOpenTileCoords;
-    Transform[,] tileMap;
 
     [HideInInspector]
     public float tileSize = 2.4f;
@@ -245,25 +237,6 @@ public class MapGenerator : Module
         return new Vector3(-map.mapSize.x / 2f + 0.5f + x, 0, -map.mapSize.y / 2f + 0.5f + y) *tileSize;
     }
 
-    public Coord GetRandomCoord()
-    {
-        Coord randomCoord = shuffledTileCoords.Dequeue();
-        shuffledTileCoords.Enqueue(randomCoord);
-        return randomCoord;
-    }
-
-
-
-    public Transform GetTileFromPosition(Vector3 position)
-    {
-        int x = Mathf.RoundToInt(position.x / tileSize + (map.mapSize.x - 1) / 2f);
-        int y = Mathf.RoundToInt(position.z / tileSize + (map.mapSize.y - 1) / 2f);
-
-        x = Mathf.Clamp(x, 0, tileMap.GetLength(0)-1);
-        y = Mathf.Clamp(y, 0, tileMap.GetLength(1)-1);
-
-        return tileMap[x, y];
-    }
 
     void OnDrawGizmos()
     {
