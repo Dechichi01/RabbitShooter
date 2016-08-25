@@ -1,24 +1,25 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System;
 
 public class MapGenerator : Module
 {
+    public MeshFilter floorMF;
+    public MeshFilter wallMF;
+
     public Map map;
     public Door[] doors;
     public Transform navmeshFloor;
     public Transform navmeshMaskPrefab;
 
-    List<Vector3> vertices;
     List<Vector3> baseVertices;
+    List<Vector3> wallVertices;
 
     public Vector2 maxMapSize;
 
     [HideInInspector]
     public float tileSize = 2.4f;
-
-    private MeshFilter floorMF;
-    private MeshRenderer floorRenderer;
 
     void Awake()
     {
@@ -35,44 +36,37 @@ public class MapGenerator : Module
         if (transform.FindChild(holderName))
             DestroyImmediate(transform.FindChild(holderName).gameObject);
 
-        Transform mapHolder = new GameObject(holderName).transform;
-        floorMF = mapHolder.gameObject.AddComponent<MeshFilter>();
-        floorRenderer = mapHolder.gameObject.AddComponent<MeshRenderer>();
-        mapHolder.parent = transform;
+        GenerateFloor();
 
-        GenerateFloor(mapHolder);
+        //InstantiateNavMask();
 
-        InstantiateNavMask(mapHolder);
-
-        mapHolder.rotation = Quaternion.Euler(0f, (float)map.mapRotation, 0f);
+        transform.rotation = Quaternion.Euler(0f, (float)map.mapRotation, 0f);
 
     }
 
-    private void InstantiateNavMask(Transform mapHolder)
+    private void InstantiateNavMask()
     {
         Transform maskLeft = Instantiate(navmeshMaskPrefab, Vector3.left * ((map.mapSize.x + maxMapSize.x) / 4f) * tileSize, Quaternion.identity) as Transform;
-        maskLeft.parent = mapHolder;
         maskLeft.localScale = new Vector3((maxMapSize.x - map.mapSize.x) / 2f, 1, map.mapSize.y) * tileSize;
 
         Transform maskRight = Instantiate(navmeshMaskPrefab, Vector3.right * ((map.mapSize.x + maxMapSize.x) / 4f) * tileSize, Quaternion.identity) as Transform;
-        maskRight.parent = mapHolder;
         maskRight.localScale = new Vector3((maxMapSize.x - map.mapSize.x) / 2f, 1, map.mapSize.y) * tileSize;
 
         Transform maskTop = Instantiate(navmeshMaskPrefab, Vector3.forward * ((map.mapSize.y + maxMapSize.y) / 4f) * tileSize, Quaternion.identity) as Transform;
-        maskTop.parent = mapHolder;
         maskTop.localScale = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.mapSize.y) / 2f) * tileSize;
 
         Transform maskBottom = Instantiate(navmeshMaskPrefab, Vector3.back * ((map.mapSize.y + maxMapSize.y) / 4f) * tileSize, Quaternion.identity) as Transform;
-        maskBottom.parent = mapHolder;
         maskBottom.localScale = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.mapSize.y) / 2f) * tileSize;
 
         navmeshFloor.localScale = new Vector3(maxMapSize.x, maxMapSize.y) * tileSize;//Navmesh floor = MaxMapsize
     }
 
-    private void GenerateFloor(Transform mapHolder)
+    private void GenerateFloor()
     {
-        Mesh mesh = new Mesh();
-        vertices = new List<Vector3>();
+        Mesh floorMesh = new Mesh();
+        Mesh wallMesh = new Mesh();
+        baseVertices = new List<Vector3>();
+        wallVertices = new List<Vector3>();
         int[] floorTriangles;
         int[] wallTriangles;
 
@@ -87,29 +81,30 @@ public class MapGenerator : Module
             GenerateQuadWalls(out wallTriangles);
         }
 
-        mesh.vertices = vertices.ToArray();
-        mesh.subMeshCount = 2;
-        mesh.SetTriangles(floorTriangles, 0);
-        mesh.SetTriangles(wallTriangles, 1);
-        mesh.RecalculateNormals();
-        floorMF.sharedMesh = mesh;
-        floorRenderer.materials = new Material[2] { map.floorMaterial, map.wallMaterial };
+        floorMesh.vertices = baseVertices.ToArray();
+        floorMesh.triangles = floorTriangles;
+        floorMesh.RecalculateNormals();
+        floorMF.sharedMesh = floorMesh;
+        floorMF.transform.GetComponent<MeshCollider>().sharedMesh = floorMesh;
 
-        MeshCollider meshCol = mapHolder.gameObject.AddComponent<MeshCollider>();
-        meshCol.sharedMesh = mesh;
-     
+        wallMesh.vertices = wallVertices.ToArray();
+        wallMesh.triangles = wallTriangles;
+        wallMesh.RecalculateNormals();
+        wallMF.sharedMesh = wallMesh;
+        wallMF.transform.GetComponent<MeshCollider>().sharedMesh = wallMesh;
+
     }
 
     private void GenerateQuadFloor(out int[] triangles)
     {
         triangles = new int[6];
 
-        vertices.Add(CoordToPosition(0, 0));
-        vertices.Add(CoordToPosition(map.mapSize.x-1, 0));
-        vertices.Add(CoordToPosition(map.mapSize.x-1, map.mapSize.y-1));
-        vertices.Add(CoordToPosition(0, map.mapSize.y-1));
+        baseVertices.Add(CoordToPosition(0, 0));
+        baseVertices.Add(CoordToPosition(map.mapSize.x-1, 0));
+        baseVertices.Add(CoordToPosition(map.mapSize.x-1, map.mapSize.y-1));
+        baseVertices.Add(CoordToPosition(0, map.mapSize.y-1));
 
-        baseVertices = vertices;
+        wallVertices = new List<Vector3>(baseVertices);
 
         CreateQuad(triangles, 0, 0, 1, 3, 2);
 
@@ -120,14 +115,14 @@ public class MapGenerator : Module
 
         triangles = new int[6 * 4];
 
-        vertices.Add(CoordToPosition(0, 0));
-        vertices.Add(CoordToPosition(map.mapSize.x-1, 0));
-        vertices.Add(CoordToPosition(map.mapSize.x-1, map.corridorSize.y));
-        vertices.Add(CoordToPosition(map.corridorSize.x, map.corridorSize.y));
-        vertices.Add(CoordToPosition(map.corridorSize.x, map.mapSize.y-1));
-        vertices.Add(CoordToPosition(0, map.mapSize.y-1));
+        baseVertices.Add(CoordToPosition(0, 0));
+        baseVertices.Add(CoordToPosition(map.mapSize.x-1, 0));
+        baseVertices.Add(CoordToPosition(map.mapSize.x-1, map.corridorSize.y));
+        baseVertices.Add(CoordToPosition(map.corridorSize.x, map.corridorSize.y));
+        baseVertices.Add(CoordToPosition(map.corridorSize.x, map.mapSize.y-1));
+        baseVertices.Add(CoordToPosition(0, map.mapSize.y-1));
 
-        baseVertices = vertices;
+        wallVertices = new List<Vector3>(baseVertices);
 
         int t = 0;
         t = CreateQuad(triangles, t, 0, 1, 3, 2);
@@ -139,32 +134,32 @@ public class MapGenerator : Module
     {
         wallTriangles = new int[3 * 2 * 18];
         
-        int ring = vertices.Count;
+        int ring = wallVertices.Count;
 
         for (int i = 0; i < ring; i++)
-            vertices.Add(vertices[i] + Vector3.up * map.wallHeight);
+            wallVertices.Add(wallVertices[i] + Vector3.up * map.wallHeight);
 
 
-        Vector3 vec = Quaternion.AngleAxis(45f, vertices[0 + ring] - vertices[0]) * ((vertices[ring - 1] - vertices[0]).normalized * map.wallDepth);
-        vertices.Add(vertices[0 + ring] + vec);
+        Vector3 vec = Quaternion.AngleAxis(45f, wallVertices[0 + ring] - wallVertices[0]) * ((wallVertices[ring - 1] - wallVertices[0]).normalized * map.wallDepth);
+        wallVertices.Add(wallVertices[0 + ring] + vec);
         for (int i = 1; i < ring; i++)
         {
-            if (vertices[i] == baseVertices[3])
-                vec = Quaternion.AngleAxis(135f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized * map.wallDepth);
+            if (wallVertices[i] == baseVertices[3])
+                vec = Quaternion.AngleAxis(135f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
             else
-                vec = Quaternion.AngleAxis(45f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized * map.wallDepth);
-            vertices.Add(vertices[i + ring] + vec);
+                vec = Quaternion.AngleAxis(45f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
+            wallVertices.Add(wallVertices[i + ring] + vec);
         }
 
-        vec = Quaternion.AngleAxis(45f, vertices[0 + ring] - vertices[0]) * ((vertices[ring - 1] - vertices[0]).normalized * map.wallDepth);
-        vertices.Add(vertices[0] + vec);
+        vec = Quaternion.AngleAxis(45f, wallVertices[0 + ring] - wallVertices[0]) * ((wallVertices[ring - 1] - wallVertices[0]).normalized * map.wallDepth);
+        wallVertices.Add(wallVertices[0] + vec);
         for (int i = 1; i < ring; i++)
         {
-            if (vertices[i] == baseVertices[3])
-                vec = Quaternion.AngleAxis(135f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized * map.wallDepth);
+            if (wallVertices[i] == baseVertices[3])
+                vec = Quaternion.AngleAxis(135f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
             else
-                vec = Quaternion.AngleAxis(45f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized * map.wallDepth);
-            vertices.Add(vertices[i] + vec);
+                vec = Quaternion.AngleAxis(45f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
+            wallVertices.Add(wallVertices[i] + vec);
         }
 
         int t = 0;
@@ -182,66 +177,86 @@ public class MapGenerator : Module
 
     private void GenerateQuadWalls(out int[] wallTriangles)
     {
-        wallTriangles = new int[3 * 2 * (12 + doors.Length*3)];
 
-        if (doors.Length > 0)
+        Door[] doorsReplica = new Door[doors.Length];
+        Array.Copy(doors, doorsReplica, doors.Length);
+        Array.Sort(doorsReplica);
+        if (doorsReplica.Length > 0)
         {
-            for (int i = 0; i < doors.Length; i++)
+            for (int i = doorsReplica.Length-1; i >=0; i--)
             {
-                if (doors[i].offSetInRoom < map.mapSize.x)
-                {
-                    //vertices.Insert(1,CoordToPosition(doors[i].offSetInRoom,0));
-                    //vertices.Insert(2, CoordToPosition(doors[i].offSetInRoom + 1, 0));
-                }
-                else if (doors[i].offSetInRoom < map.mapSize.x + map.mapSize.y)
-                {
+                if (doorsReplica[i].offSetInRoom > 2 * (map.mapSize.x + map.mapSize.y))
+                    continue;
 
-                }
-                else if (doors[i].offSetInRoom < map.mapSize.x*2 + map.mapSize.y)
+                if (doorsReplica[i].offSetInRoom > map.mapSize.x * 2 + map.mapSize.y)
                 {
-
+                    wallVertices.Insert(4, CoordToPosition(0, map.mapSize.y -1 - doorsReplica[i].offSetInRoom + map.mapSize.x * 2 + map.mapSize.y));
+                    wallVertices.Insert(5, CoordToPosition(0, map.mapSize.y - 2 - doorsReplica[i].offSetInRoom + map.mapSize.x * 2 + map.mapSize.y));
                 }
-                else if (doors[i].offSetInRoom < (map.mapSize.x + map.mapSize.y)*2)
+                else if (doorsReplica[i].offSetInRoom > map.mapSize.x + map.mapSize.y)
                 {
-
+                    wallVertices.Insert(3, CoordToPosition(map.mapSize.x - 1 - doorsReplica[i].offSetInRoom + map.mapSize.x + map.mapSize.y, map.mapSize.y-1 ));
+                    wallVertices.Insert(4, CoordToPosition(map.mapSize.x - 2 - doorsReplica[i].offSetInRoom + map.mapSize.x + map.mapSize.y, map.mapSize.y - 1));
+                }
+                else if (doorsReplica[i].offSetInRoom > map.mapSize.x)
+                {
+                    wallVertices.Insert(2, CoordToPosition(map.mapSize.x-1, doorsReplica[i].offSetInRoom -map.mapSize.x));
+                    wallVertices.Insert(3, CoordToPosition(map.mapSize.x-1, doorsReplica[i].offSetInRoom - map.mapSize.x + 1));
+                }
+                else if (doorsReplica[i].offSetInRoom >0)
+                {
+                    wallVertices.Insert(1,CoordToPosition(doorsReplica[i].offSetInRoom,0));
+                    wallVertices.Insert(2, CoordToPosition(doorsReplica[i].offSetInRoom + 1, 0));
                 }
             }
         }
-        int ring = vertices.Count;
+
+        wallTriangles = new int[6 * 3 * wallVertices.Count];
+        int ring = wallVertices.Count;
 
         for (int i = 0; i < ring; i++)
-            vertices.Add(vertices[i] + Vector3.up * map.wallHeight);
+            wallVertices.Add(wallVertices[i] + Vector3.up * map.wallHeight);
 
-        Vector3 vec = Quaternion.AngleAxis(45f, vertices[0 + ring] - vertices[0]) * ((vertices[ring-1] - vertices[0]).normalized * map.wallDepth);
-        vertices.Add(vertices[0 + ring] + vec);
+        Vector3 vec = Quaternion.AngleAxis(45f, wallVertices[0 + ring] - wallVertices[0]) * ((wallVertices[ring-1] - wallVertices[0]).normalized * map.wallDepth);
+        wallVertices.Add(wallVertices[0 + ring] + vec);
         for (int i = 1; i < ring; i++)
         {
-            if (baseVertices.Contains(vertices[i]))
-            {
-                vec = Quaternion.AngleAxis(45f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized * map.wallDepth);
-            }
+            if (baseVertices.Contains(wallVertices[i]))
+                vec = Quaternion.AngleAxis(45f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
             else
-                vec = Quaternion.AngleAxis(90f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized * map.wallDepth); vertices.Add(vertices[i + ring] + vec);
+                vec = Quaternion.AngleAxis(90f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
+            wallVertices.Add(wallVertices[i + ring] + vec);
         }
 
-        vec = Quaternion.AngleAxis(45f, vertices[0 + ring] - vertices[0]) * ((vertices[ring - 1] - vertices[0]).normalized * map.wallDepth);
-        vertices.Add(vertices[0] + vec);
+        vec = Quaternion.AngleAxis(45f, wallVertices[0 + ring] - wallVertices[0]) * ((wallVertices[ring - 1] - wallVertices[0]).normalized * map.wallDepth);
+        wallVertices.Add(wallVertices[0] + vec);
         for (int i = 1; i < ring; i++)
         {
-            vec = Quaternion.AngleAxis(45f, vertices[i + ring] - vertices[i]) * ((vertices[i - 1] - vertices[i]).normalized * map.wallDepth);
-            vertices.Add(vertices[i] + vec);
+            if (baseVertices.Contains(wallVertices[i]))
+                vec = Quaternion.AngleAxis(45f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
+            else
+                vec = Quaternion.AngleAxis(90f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
+            wallVertices.Add(wallVertices[i] + vec);
         }
 
         int t = 0;
-        for (int i = 0; i < ring-1; i++)
+        int v = 0;
+        bool firstDoorVertice = true;
+        for (int i = 0; i < ring - 1; i++, v++)
         {
-            t = CreateQuad(wallTriangles, t, i, i + 1, i + ring,i + ring + 1);
-            t = CreateQuad(wallTriangles, t, i + ring, i + ring + 1, i + ring * 2, i + ring * 2 + 1);
-            t = CreateQuad(wallTriangles, t, i + ring * 3, i + ring * 3 + 1, i + ring * 2, i + ring * 2 + 1, true);
+            if (!baseVertices.Contains(wallVertices[i]))
+                firstDoorVertice = !firstDoorVertice;
+
+            if (firstDoorVertice)
+            {
+                t = CreateQuad(wallTriangles, t, i, i + 1, i + ring, i + ring + 1);
+                t = CreateQuad(wallTriangles, t, i + ring, i + ring + 1, i + ring * 2, i + ring * 2 + 1);
+                t = CreateQuad(wallTriangles, t, i + ring * 3, i + ring * 3 + 1, i + ring * 2, i + ring * 2 + 1, true);
+            }
         }
-        t = CreateQuad(wallTriangles, t, 3, 0, 3 + ring, ring);
-        t = CreateQuad(wallTriangles, t, 3 + ring, ring, 3 + ring * 2, ring * 2);
-        t = CreateQuad(wallTriangles, t, 3 + ring * 3, ring * 3, 3 + ring * 2, ring * 2, true);
+        t = CreateQuad(wallTriangles, t, v, 0, v + ring, ring);
+        t = CreateQuad(wallTriangles, t, v + ring, ring, v + ring * 2, ring * 2);
+        t = CreateQuad(wallTriangles, t, v + ring * 3, ring * 3, v + ring * 2, ring * 2, true);
     }
 
     private int CreateQuad(int[] triangles, int i, int v00, int v01, int v10, int v11, bool inverted = false)
@@ -268,12 +283,12 @@ public class MapGenerator : Module
 
     void OnDrawGizmos()
     {
-        if (vertices != null)
+        if (wallVertices != null)
         {
             Gizmos.color = Color.black;
-            for (int i = 0; i < vertices.Count; i++)
+            for (int i = 0; i < wallVertices.Count; i++)
             {
-                Gizmos.DrawSphere(vertices[i], 0.1f);
+                Gizmos.DrawSphere(wallVertices[i], 0.1f);
             }
         }
     }
@@ -313,8 +328,6 @@ public class Map
         W = 90,
         E = 270
     };
-    public Material floorMaterial;
-    public Material wallMaterial;
     public Coord mapSize;
     public MapRotations mapRotation;
     public Coord corridorSize;
@@ -336,8 +349,17 @@ public class Map
 }
 
 [System.Serializable]
-public class Door
+public class Door : IComparable
 {
     public Transform roomDoorPrefab;
     public float offSetInRoom;
+
+    public int CompareTo(object obj)
+    {
+        Door otherDoor = (Door)obj;
+        if (otherDoor !=null)
+            return (int)(offSetInRoom - otherDoor.offSetInRoom);
+        else
+            throw new ArgumentException("Object is not a Door");
+    }
 }
