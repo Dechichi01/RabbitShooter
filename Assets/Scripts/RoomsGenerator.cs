@@ -20,6 +20,7 @@ public class RoomsGenerator : MonoBehaviour {
 
 
         Module startingModule = (Module) Instantiate(startModule, transform.position, transform.rotation);
+        startingModule.transform.GetComponent<MapGenerator>().GenerateMap();////////--------------VER ISSO
         startingModule.transform.parent = generatedMap;
         List<Exit> pendingExits = startingModule.GetExits();
 
@@ -34,6 +35,7 @@ public class RoomsGenerator : MonoBehaviour {
                 string newTag = exit.GetRandomConnectTag();
                 Module newModulePrefab = GetRandomWithTag(modules, newTag);
                 Module newModule = Instantiate(newModulePrefab);
+                newModule.transform.GetComponent<MapGenerator>().GenerateMap();////////--------------VER ISSO
                 List<Exit> newModuleExits = newModule.GetExits();
                 Exit exitToMatch = GetAppropriateExit(newModuleExits);
                 MatchExits(exit, exitToMatch);

@@ -23,24 +23,36 @@ public class MapGenerator : Module
 
     void Awake()
     {
-        if (!transform.FindChild("Generated Map"))
+        if (!transform.FindChild("Doors"))
             GenerateMap();
        
     }
 
     public void GenerateMap()
     {
+        Vector3 startPos = transform.position;
+        transform.position = Vector3.zero;
+
+        string doorsHolderName = "Doors";
+        if (transform.FindChild(doorsHolderName))
+            DestroyImmediate(transform.FindChild(doorsHolderName).gameObject);
+
+        Transform doorsHolder = new GameObject(doorsHolderName).transform;
+        doorsHolder.parent = transform;
+
         GetComponent<BoxCollider>().size = new Vector3(map.mapSize.x * tileSize, .05f, map.mapSize.y * tileSize);
 
         string holderName = "Generated Map";
         if (transform.FindChild(holderName))
             DestroyImmediate(transform.FindChild(holderName).gameObject);
 
-        GenerateFloor();
+        GenerateFloor(doorsHolder);
 
         //InstantiateNavMask();
 
         transform.rotation = Quaternion.Euler(0f, (float)map.mapRotation, 0f);
+
+        transform.position = startPos;
 
     }
 
@@ -61,7 +73,7 @@ public class MapGenerator : Module
         navmeshFloor.localScale = new Vector3(maxMapSize.x, maxMapSize.y) * tileSize;//Navmesh floor = MaxMapsize
     }
 
-    private void GenerateFloor()
+    private void GenerateFloor(Transform doorsHolder)
     {
         Mesh floorMesh = new Mesh();
         Mesh wallMesh = new Mesh();
@@ -78,7 +90,7 @@ public class MapGenerator : Module
         else
         {
             GenerateQuadFloor(out floorTriangles);
-            GenerateQuadWalls(out wallTriangles);
+            GenerateQuadWalls(out wallTriangles, doorsHolder);
         }
 
         floorMesh.vertices = baseVertices.ToArray();
@@ -175,12 +187,13 @@ public class MapGenerator : Module
 
     }
 
-    private void GenerateQuadWalls(out int[] wallTriangles)
+    private void GenerateQuadWalls(out int[] wallTriangles, Transform doorsHolder)
     {
 
         Door[] doorsReplica = new Door[doors.Length];
         Array.Copy(doors, doorsReplica, doors.Length);
         Array.Sort(doorsReplica);
+        //Add the door vertices
         if (doorsReplica.Length > 0)
         {
             for (int i = doorsReplica.Length-1; i >=0; i--)
@@ -191,32 +204,34 @@ public class MapGenerator : Module
                 if (doorsReplica[i].offSetInRoom > map.mapSize.x * 2 + map.mapSize.y)
                 {
                     wallVertices.Insert(4, CoordToPosition(0, map.mapSize.y -1 - doorsReplica[i].offSetInRoom + map.mapSize.x * 2 + map.mapSize.y));
-                    wallVertices.Insert(5, CoordToPosition(0, map.mapSize.y - 2 - doorsReplica[i].offSetInRoom + map.mapSize.x * 2 + map.mapSize.y));
+                    wallVertices.Insert(5, CoordToPosition(0, map.mapSize.y - 1 - doorsReplica[i].doorWidth - doorsReplica[i].offSetInRoom + map.mapSize.x * 2 + map.mapSize.y));
                 }
                 else if (doorsReplica[i].offSetInRoom > map.mapSize.x + map.mapSize.y)
                 {
                     wallVertices.Insert(3, CoordToPosition(map.mapSize.x - 1 - doorsReplica[i].offSetInRoom + map.mapSize.x + map.mapSize.y, map.mapSize.y-1 ));
-                    wallVertices.Insert(4, CoordToPosition(map.mapSize.x - 2 - doorsReplica[i].offSetInRoom + map.mapSize.x + map.mapSize.y, map.mapSize.y - 1));
+                    wallVertices.Insert(4, CoordToPosition(map.mapSize.x - doorsReplica[i].doorWidth - doorsReplica[i].offSetInRoom + map.mapSize.x + map.mapSize.y, map.mapSize.y - 1));
                 }
                 else if (doorsReplica[i].offSetInRoom > map.mapSize.x)
                 {
                     wallVertices.Insert(2, CoordToPosition(map.mapSize.x-1, doorsReplica[i].offSetInRoom -map.mapSize.x));
-                    wallVertices.Insert(3, CoordToPosition(map.mapSize.x-1, doorsReplica[i].offSetInRoom - map.mapSize.x + 1));
+                    wallVertices.Insert(3, CoordToPosition(map.mapSize.x-1, doorsReplica[i].offSetInRoom - map.mapSize.x + doorsReplica[i].doorWidth));
                 }
                 else if (doorsReplica[i].offSetInRoom >0)
                 {
                     wallVertices.Insert(1,CoordToPosition(doorsReplica[i].offSetInRoom,0));
-                    wallVertices.Insert(2, CoordToPosition(doorsReplica[i].offSetInRoom + 1, 0));
+                    wallVertices.Insert(2, CoordToPosition(doorsReplica[i].offSetInRoom + doorsReplica[i].doorWidth, 0));
                 }
             }
         }
 
-        wallTriangles = new int[6 * 3 * wallVertices.Count];
+        wallTriangles = new int[6 * 3 * (2*wallVertices.Count - baseVertices.Count)];
         int ring = wallVertices.Count;
 
+        //Add the ceiling vertices
         for (int i = 0; i < ring; i++)
             wallVertices.Add(wallVertices[i] + Vector3.up * map.wallHeight);
 
+        //Add ceiling vertices matches
         Vector3 vec = Quaternion.AngleAxis(45f, wallVertices[0 + ring] - wallVertices[0]) * ((wallVertices[ring-1] - wallVertices[0]).normalized * map.wallDepth);
         wallVertices.Add(wallVertices[0 + ring] + vec);
         for (int i = 1; i < ring; i++)
@@ -228,6 +243,7 @@ public class MapGenerator : Module
             wallVertices.Add(wallVertices[i + ring] + vec);
         }
 
+        //Add base vertices matches
         vec = Quaternion.AngleAxis(45f, wallVertices[0 + ring] - wallVertices[0]) * ((wallVertices[ring - 1] - wallVertices[0]).normalized * map.wallDepth);
         wallVertices.Add(wallVertices[0] + vec);
         for (int i = 1; i < ring; i++)
@@ -239,13 +255,44 @@ public class MapGenerator : Module
             wallVertices.Add(wallVertices[i] + vec);
         }
 
+        //Create the triangles
         int t = 0;
         int v = 0;
+        int doorIndex = 0;
         bool firstDoorVertice = true;
         for (int i = 0; i < ring - 1; i++, v++)
         {
             if (!baseVertices.Contains(wallVertices[i]))
+            {
+                if (firstDoorVertice)
+                {
+                    float doorHeight = doorsReplica[doorIndex].doorHeight;
+
+                    wallVertices.Add(wallVertices[i] + Vector3.up * doorHeight);
+                    wallVertices.Add(wallVertices[i + 1] + Vector3.up * doorHeight);
+                    vec = Quaternion.AngleAxis(90f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth) + Vector3.up* doorHeight;
+                    wallVertices.Add(wallVertices[i] + vec);
+                    wallVertices.Add(wallVertices[i + 1] + vec);
+
+                    t = CreateQuad(wallTriangles, t, wallVertices.Count-4, wallVertices.Count-3, i + ring, i + ring + 1);
+                    t = CreateQuad(wallTriangles, t, i + ring, i + ring + 1, i + ring * 2, i + ring * 2 + 1);
+                    t = CreateQuad(wallTriangles, t, wallVertices.Count-2, wallVertices.Count-1, i + ring * 2, i + ring * 2 + 1, true);
+
+                    Transform doorInstance = Instantiate(doorsReplica[doorIndex].roomDoorPrefab);
+                    Transform connection = doorInstance.FindChild("Connector");
+                    Vector3 childLocalPos = connection.localPosition;//Store the child to parent position offset
+                    connection.GetComponent<Exit>().Room = transform;
+                    connection.parent = null;//so the child moves freely
+                    connection.position = wallVertices[i] + (wallVertices[i + 1] - wallVertices[i]) / 2 + (wallVertices[i+ring*3]-wallVertices[i])/2;
+                    doorInstance.position = connection.position - childLocalPos;
+                    connection.parent = doorInstance;
+                    doorInstance.forward = Quaternion.AngleAxis(-90f, Vector3.up) * (wallVertices[i + 1] - wallVertices[i]);
+                    doorInstance.parent = doorsHolder;
+                    doorIndex++;
+
+                }
                 firstDoorVertice = !firstDoorVertice;
+            }
 
             if (firstDoorVertice)
             {
@@ -277,7 +324,7 @@ public class MapGenerator : Module
 
     public Vector3 CoordToPosition(float x, float y)
     {
-        return new Vector3(-map.mapSize.x / 2f + 0.5f + x, 0, -map.mapSize.y / 2f + 0.5f + y) *tileSize;
+        return transform.position + new Vector3(-map.mapSize.x / 2f + 0.5f + x, 0, -map.mapSize.y / 2f + 0.5f + y) *tileSize;
     }
 
 
@@ -288,7 +335,7 @@ public class MapGenerator : Module
             Gizmos.color = Color.black;
             for (int i = 0; i < wallVertices.Count; i++)
             {
-                Gizmos.DrawSphere(wallVertices[i], 0.1f);
+                //Gizmos.DrawSphere(wallVertices[i], 0.1f);
             }
         }
     }
@@ -352,6 +399,8 @@ public class Map
 public class Door : IComparable
 {
     public Transform roomDoorPrefab;
+    public float doorHeight;
+    public float doorWidth;
     public float offSetInRoom;
 
     public int CompareTo(object obj)
