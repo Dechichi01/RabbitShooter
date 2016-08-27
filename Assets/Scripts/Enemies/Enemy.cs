@@ -50,7 +50,7 @@ public class Enemy : LivingEntity {
 
 	float damage = 1f;
 
-	float attackDistanceThreshold = .5f;
+	public float attackDistanceThreshold = .5f;
 	float timeBetweenAttacks = 1;
 
 	float nextAttackTime;
@@ -120,7 +120,7 @@ public class Enemy : LivingEntity {
         return true;
     }
 
-    public override void TakeHit(float damage, Vector3 hitPoint, Vector3 hitDirection)
+    public override void TakeHit(float damage, Vector3 hitPoint, Vector3 hitDirection, float amountToFend = 0)
     {
         AudioManager.instance.PlaySound("Impact", transform.position);
         if (damage >= health)
@@ -131,7 +131,7 @@ public class Enemy : LivingEntity {
             Destroy(Instantiate(deathEffect.gameObject, hitPoint, Quaternion.FromToRotation(Vector3.forward,hitDirection)) as GameObject, deathEffect.startLifetime);
         }
         base.TakeHit(damage, hitPoint, hitDirection);
-        //StartCoroutine(Fend());
+        StartCoroutine(Fend(amountToFend));
     }
 
     void OnTargetDeath(){
@@ -220,12 +220,15 @@ public class Enemy : LivingEntity {
         }
     }
 
-    IEnumerator Fend()
+    IEnumerator Fend(float amountToFend)
     {
+        if (amountToFend == 0)
+            yield break;
+
         Vector3 start = transform.position;
-        Vector3 end = start - (playerTarget.thisTransform.position - start).normalized;
+        Vector3 end = start - (playerTarget.thisTransform.position - start).normalized*amountToFend;
         float percent = 0;
-        float fendSpeed = 1 / 0.05f;
+        float fendSpeed = 1 / 0.2f;
 
         isFending = true;
         while (percent < 1)

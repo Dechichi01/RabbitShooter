@@ -3,12 +3,12 @@ using System.Collections;
 using UnityStandardAssets.CrossPlatformInput;
 
 [RequireComponent (typeof (PlayerController))]
-[RequireComponent (typeof (GunController))]
+[RequireComponent (typeof (WeaponManager))]
 public class Player : LivingEntity {
 
 	public float moveSpeed = 5f;
 	PlayerController controller;
-	GunController gunController;
+	WeaponManager gunController;
 	Camera viewCamera;
     private SwipeDetector swipeControl;
     Vector3 aimVelocity;
@@ -23,7 +23,7 @@ public class Player : LivingEntity {
 	override protected void Start () {
 		base.Start();
 		controller = GetComponent<PlayerController>();
-		gunController = GetComponent<GunController>();
+		gunController = GetComponent<WeaponManager>();
 		swipeControl = GetComponent<SwipeDetector>();
         animator = GetComponent<Animator>();
 		viewCamera = Camera.main;
@@ -59,12 +59,12 @@ public class Player : LivingEntity {
 			controller.Rotate(new Vector3(0f,-90f,0f));
 			break;
         case SwipeDetector.SwipeDirection.Shoot:
-            gunController.Shoot();
+            gunController.Use();
             break;
     	}
 
         if (Input.GetKeyDown(KeyCode.Space))
-            gunController.Shoot();
+            gunController.Use();
         if (Input.GetKeyDown(KeyCode.Z))
             controller.Rotate(new Vector3(0f, -90f, 0f));
         if (Input.GetKeyDown(KeyCode.X))

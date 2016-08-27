@@ -23,6 +23,11 @@ public class Projectile : PoolObject {
 		speed = newSpeed;
 	}
 
+    public void SetDamage(float newDamage)
+    {
+        damage = newDamage;
+    }
+
 	void Update () {
 		float moveDistance = speed*Time.deltaTime;
 		CheckCollisions(moveDistance);

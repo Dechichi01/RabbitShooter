@@ -1,0 +1,453 @@
+fileFormatVersion: 2
+guid: 65b194f102dc4e8458ddbdce346162b2
+timeCreated: 1472320385
+licenseType: Free
+ModelImporter:
+  serializedVersion: 19
+  fileIDToRecycleName:
+    100000: '2ND FRONT '
+    100002: //RootNode
+    100004: 432-d34#1_
+    100006: 432-d34_00
+    100008: Bolt hea10
+    100010: Bolt hea11
+    100012: Bolt hea12
+    100014: Bolt hea13
+    100016: Bolt hea14
+    100018: Bolt hea15
+    100020: Bolt hea16
+    100022: Bolt hea17
+    100024: Bolt hea18
+    100026: Bolt hea19
+    100028: Bolt hea20
+    100030: Bolt hea21
+    100032: Bolt hea22
+    100034: Bolt hea23
+    100036: Bolt head0
+    100038: Bolt head1
+    100040: Bolt head2
+    100042: Bolt head3
+    100044: Bolt head4
+    100046: Bolt head5
+    100048: Bolt head6
+    100050: Bolt head7
+    100052: Bolt head8
+    100054: Bolt head9
+    100056: Bolt head_
+    100058: Box67_001
+    100060: Component#
+    100062: Component0
+    100064: Component1
+    100066: Component2
+    100068: Component3
+    100070: Drum w/ f0
+    100072: Drum w/ fr
+    100074: Freeze_001
+    100076: fRONT X-ME
+    100078: Frozen pro
+    100080: frozen pro
+    100082: fUELTANK S
+    100084: 'gEARBOX X '
+    100086: Group_001
+    100088: Group_002
+    100090: Group_003
+    100092: Group_004
+    100094: Group_005
+    100096: Group_007
+    100098: Group_009
+    100100: Group_010
+    100102: Group_012
+    100104: Group_013
+    100106: Group_014
+    100108: Group_015
+    100110: Group_017
+    100112: Group_018
+    100114: Group_019
+    100116: Group_020
+    100118: Group_021
+    100120: Group_022
+    100122: Group_023
+    100124: Group_024
+    100126: Group_025
+    100128: Group_026
+    100130: Group_027
+    100132: MATSON#1_0
+    100134: MATSON_001
+    100136: mID X MEM0
+    100138: mID X MEM1
+    100140: mID X MEM2
+    100142: mID X MEM3
+    100144: mID X MEM4
+    100146: mID X MEMB
+    100148: NEVADA#1_0
+    100150: NEVADA_001
+    100152: pARALEL C0
+    100154: pARALEL CH
+    100156: Rear bumpe
+    100158: Rear drum_
+    100160: ske125_001
+    400000: '2ND FRONT '
+    400002: //RootNode
+    400004: 432-d34#1_
+    400006: 432-d34_00
+    400008: Bolt hea10
+    400010: Bolt hea11
+    400012: Bolt hea12
+    400014: Bolt hea13
+    400016: Bolt hea14
+    400018: Bolt hea15
+    400020: Bolt hea16
+    400022: Bolt hea17
+    400024: Bolt hea18
+    400026: Bolt hea19
+    400028: Bolt hea20
+    400030: Bolt hea21
+    400032: Bolt hea22
+    400034: Bolt hea23
+    400036: Bolt head0
+    400038: Bolt head1
+    400040: Bolt head2
+    400042: Bolt head3
+    400044: Bolt head4
+    400046: Bolt head5
+    400048: Bolt head6
+    400050: Bolt head7
+    400052: Bolt head8
+    400054: Bolt head9
+    400056: Bolt head_
+    400058: Box67_001
+    400060: Component#
+    400062: Component0
+    400064: Component1
+    400066: Component2
+    400068: Component3
+    400070: Drum w/ f0
+    400072: Drum w/ fr
+    400074: Freeze_001
+    400076: fRONT X-ME
+    400078: Frozen pro
+    400080: frozen pro
+    400082: fUELTANK S
+    400084: 'gEARBOX X '
+    400086: Group_001
+    400088: Group_002
+    400090: Group_003
+    400092: Group_004
+    400094: Group_005
+    400096: Group_007
+    400098: Group_009
+    400100: Group_010
+    400102: Group_012
+    400104: Group_013
+    400106: Group_014
+    400108: Group_015
+    400110: Group_017
+    400112: Group_018
+    400114: Group_019
+    400116: Group_020
+    400118: Group_021
+    400120: Group_022
+    400122: Group_023
+    400124: Group_024
+    400126: Group_025
+    400128: Group_026
+    400130: Group_027
+    400132: MATSON#1_0
+    400134: MATSON_001
+    400136: mID X MEM0
+    400138: mID X MEM1
+    400140: mID X MEM2
+    400142: mID X MEM3
+    400144: mID X MEM4
+    400146: mID X MEMB
+    400148: NEVADA#1_0
+    400150: NEVADA_001
+    400152: pARALEL C0
+    400154: pARALEL CH
+    400156: Rear bumpe
+    400158: Rear drum_
+    400160: ske125_001
+    2300000: '2ND FRONT '
+    2300002: 432-d34#1_
+    2300004: 432-d34_00
+    2300006: Bolt hea10
+    2300008: Bolt hea11
+    2300010: Bolt hea12
+    2300012: Bolt hea13
+    2300014: Bolt hea14
+    2300016: Bolt hea15
+    2300018: Bolt hea16
+    2300020: Bolt hea17
+    2300022: Bolt hea18
+    2300024: Bolt hea19
+    2300026: Bolt hea20
+    2300028: Bolt hea21
+    2300030: Bolt hea22
+    2300032: Bolt hea23
+    2300034: Bolt head0
+    2300036: Bolt head1
+    2300038: Bolt head2
+    2300040: Bolt head3
+    2300042: Bolt head4
+    2300044: Bolt head5
+    2300046: Bolt head6
+    2300048: Bolt head7
+    2300050: Bolt head8
+    2300052: Bolt head9
+    2300054: Bolt head_
+    2300056: Box67_001
+    2300058: Component#
+    2300060: Component0
+    2300062: Component1
+    2300064: Component2
+    2300066: Component3
+    2300068: Drum w/ f0
+    2300070: Drum w/ fr
+    2300072: Freeze_001
+    2300074: fRONT X-ME
+    2300076: Frozen pro
+    2300078: frozen pro
+    2300080: fUELTANK S
+    2300082: 'gEARBOX X '
+    2300084: Group_001
+    2300086: Group_002
+    2300088: Group_003
+    2300090: Group_004
+    2300092: Group_005
+    2300094: Group_007
+    2300096: Group_009
+    2300098: Group_010
+    2300100: Group_012
+    2300102: Group_013
+    2300104: Group_014
+    2300106: Group_015
+    2300108: Group_017
+    2300110: Group_018
+    2300112: Group_019
+    2300114: Group_020
+    2300116: Group_021
+    2300118: Group_022
+    2300120: Group_023
+    2300122: Group_024
+    2300124: Group_025
+    2300126: Group_026
+    2300128: Group_027
+    2300130: MATSON#1_0
+    2300132: MATSON_001
+    2300134: mID X MEM0
+    2300136: mID X MEM1
+    2300138: mID X MEM2
+    2300140: mID X MEM3
+    2300142: mID X MEM4
+    2300144: mID X MEMB
+    2300146: NEVADA#1_0
+    2300148: NEVADA_001
+    2300150: pARALEL C0
+    2300152: pARALEL CH
+    2300154: Rear bumpe
+    2300156: Rear drum_
+    2300158: ske125_001
+    3300000: '2ND FRONT '
+    3300002: 432-d34#1_
+    3300004: 432-d34_00
+    3300006: Bolt hea10
+    3300008: Bolt hea11
+    3300010: Bolt hea12
+    3300012: Bolt hea13
+    3300014: Bolt hea14
+    3300016: Bolt hea15
+    3300018: Bolt hea16
+    3300020: Bolt hea17
+    3300022: Bolt hea18
+    3300024: Bolt hea19
+    3300026: Bolt hea20
+    3300028: Bolt hea21
+    3300030: Bolt hea22
+    3300032: Bolt hea23
+    3300034: Bolt head0
+    3300036: Bolt head1
+    3300038: Bolt head2
+    3300040: Bolt head3
+    3300042: Bolt head4
+    3300044: Bolt head5
+    3300046: Bolt head6
+    3300048: Bolt head7
+    3300050: Bolt head8
+    3300052: Bolt head9
+    3300054: Bolt head_
+    3300056: Box67_001
+    3300058: Component#
+    3300060: Component0
+    3300062: Component1
+    3300064: Component2
+    3300066: Component3
+    3300068: Drum w/ f0
+    3300070: Drum w/ fr
+    3300072: Freeze_001
+    3300074: fRONT X-ME
+    3300076: Frozen pro
+    3300078: frozen pro
+    3300080: fUELTANK S
+    3300082: 'gEARBOX X '
+    3300084: Group_001
+    3300086: Group_002
+    3300088: Group_003
+    3300090: Group_004
+    3300092: Group_005
+    3300094: Group_007
+    3300096: Group_009
+    3300098: Group_010
+    3300100: Group_012
+    3300102: Group_013
+    3300104: Group_014
+    3300106: Group_015
+    3300108: Group_017
+    3300110: Group_018
+    3300112: Group_019
+    3300114: Group_020
+    3300116: Group_021
+    3300118: Group_022
+    3300120: Group_023
+    3300122: Group_024
+    3300124: Group_025
+    3300126: Group_026
+    3300128: Group_027
+    3300130: MATSON#1_0
+    3300132: MATSON_001
+    3300134: mID X MEM0
+    3300136: mID X MEM1
+    3300138: mID X MEM2
+    3300140: mID X MEM3
+    3300142: mID X MEM4
+    3300144: mID X MEMB
+    3300146: NEVADA#1_0
+    3300148: NEVADA_001
+    3300150: pARALEL C0
+    3300152: pARALEL CH
+    3300154: Rear bumpe
+    3300156: Rear drum_
+    3300158: ske125_001
+    4300000: MATSON_001
+    4300002: NEVADA#1_0
+    4300004: frozen pro
+    4300006: 432-d34#1_
+    4300008: Frozen pro
+    4300010: 432-d34_00
+    4300012: NEVADA_001
+    4300014: MATSON#1_0
+    4300016: Freeze_001
+    4300018: Component#
+    4300020: Box67_001
+    4300022: Bolt head_
+    4300024: Bolt head0
+    4300026: Bolt head0
+    4300028: Bolt head0
+    4300030: Bolt head0
+    4300032: Group_027
+    4300034: Rear bumpe
+    4300036: mID X MEMB
+    4300038: mID X MEM0
+    4300040: mID X MEM1
+    4300042: mID X MEM2
+    4300044: mID X MEM3
+    4300046: 'gEARBOX X '
+    4300048: fUELTANK S
+    4300050: mID X MEM4
+    4300052: Group_026
+    4300054: '2ND FRONT '
+    4300056: fRONT X-ME
+    4300058: pARALEL CH
+    4300060: pARALEL C0
+    4300062: Group_025
+    4300064: Group_024
+    4300066: Group_023
+    4300068: Group_022
+    4300070: Group_021
+    4300072: Group_020
+    4300074: Group_019
+    4300076: Group_018
+    4300078: Group_017
+    4300080: Group_015
+    4300082: Group_014
+    4300084: Group_013
+    4300086: Rear drum_
+    4300088: Drum w/ fr
+    4300090: Drum w/ f0
+    4300092: Group_012
+    4300094: Group_010
+    4300096: Group_009
+    4300098: Group_007
+    4300100: Group_005
+    4300102: Group_004
+    4300104: Group_003
+    4300106: Component0
+    4300108: Component0
+    4300110: Component2
+    4300112: Component3
+    4300114: ske125_001
+    4300116: Group_002
+    4300118: Group_001
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleRotations: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -1,8 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
 [RequireComponent(typeof(Projectile))]
-public class Gun : MonoBehaviour {
+public class Gun : Weapon {
 
 	public Transform muzzle;
 	public Projectile projectile;
@@ -44,13 +45,14 @@ public class Gun : MonoBehaviour {
             Reload();
     }
 
-	public void Shoot(){
+	public override void Use(){
 		if (Time.time > nextShotTime && !isReloading && projectilesRemaining > 0){
             projectilesRemaining--;
 
 			nextShotTime = Time.time + msBetweenShots/1000;
             Projectile newProjectile = PoolManager.instance.ReuseObject(projectile.gameObject, muzzle.position, muzzle.rotation).GetComponent<Projectile>();
 			newProjectile.SetSpeed(muzzleVelocity);
+            newProjectile.SetDamage(damage);
 
             PoolManager.instance.ReuseObject(shell.gameObject, shellEjection.position, shellEjection.rotation);
             muzzleFlash.Activate();
@@ -60,6 +62,13 @@ public class Gun : MonoBehaviour {
             AudioManager.instance.PlaySound(shootAudio, transform.position);
 		}
 	}
+
+    public override void Equip(Transform holder)
+    {
+        transform.position = holder.position;
+        transform.rotation = holder.rotation;
+        transform.parent = holder;
+    }
 
     public void Reload()
     {
