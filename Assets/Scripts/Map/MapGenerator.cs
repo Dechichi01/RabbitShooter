@@ -13,42 +13,48 @@ public class MapGenerator : Module
     public Transform navmeshFloor;
     public Transform navmeshMaskPrefab;
 
-    List<Vector3> baseVertices;
+    List<Vector3> floorVertices;
     List<Vector3> wallVertices;
 
     public Vector2 maxMapSize;
 
-    [HideInInspector]
-    public float tileSize = 2.4f;
-
     void Awake()
     {
-        if (!transform.FindChild("Doors"))
+        if (!transform.FindChild("Generated Map"))
             GenerateMap();
        
     }
 
     public void GenerateMap()
     {
+        //Initiate maxMapSize (used by the NavMesh Mask)
+        maxMapSize.x = map.mapSize.x * 1.2f;
+        maxMapSize.y = map.mapSize.y * 1.2f;
+
+        GetComponent<BoxCollider>().size = new Vector3(map.mapSize.x, .05f, map.mapSize.y);
+
+        //Store startPos (in case the map is generated in a position different from (0,0,0)
         Vector3 startPos = transform.position;
         transform.position = Vector3.zero;
 
+        string mapHolderName = "Generated Map";
+        if (transform.FindChild(mapHolderName))
+            DestroyImmediate(transform.FindChild(mapHolderName).gameObject);
+
+        Transform mapHolder = new GameObject(mapHolderName).transform;
+        mapHolder.parent = transform;
+
         string doorsHolderName = "Doors";
-        if (transform.FindChild(doorsHolderName))
-            DestroyImmediate(transform.FindChild(doorsHolderName).gameObject);
-
         Transform doorsHolder = new GameObject(doorsHolderName).transform;
-        doorsHolder.parent = transform;
+        doorsHolder.parent = mapHolder;
 
-        GetComponent<BoxCollider>().size = new Vector3(map.mapSize.x * tileSize, .05f, map.mapSize.y * tileSize);
+        string navMaskHolderName = "NavMask";
+        Transform navMaskHolder = new GameObject(navMaskHolderName).transform;
+        navMaskHolder.parent = mapHolder;
 
-        string holderName = "Generated Map";
-        if (transform.FindChild(holderName))
-            DestroyImmediate(transform.FindChild(holderName).gameObject);
+        GenerateMesh(doorsHolder);
 
-        GenerateFloor(doorsHolder);
-
-        //InstantiateNavMask();
+        InstantiateNavMask(navMaskHolder);
 
         transform.rotation = Quaternion.Euler(0f, (float)map.mapRotation, 0f);
 
@@ -56,28 +62,32 @@ public class MapGenerator : Module
 
     }
 
-    private void InstantiateNavMask()
+    private void InstantiateNavMask(Transform mapHolder)
     {
-        Transform maskLeft = Instantiate(navmeshMaskPrefab, Vector3.left * ((map.mapSize.x + maxMapSize.x) / 4f) * tileSize, Quaternion.identity) as Transform;
-        maskLeft.localScale = new Vector3((maxMapSize.x - map.mapSize.x) / 2f, 1, map.mapSize.y) * tileSize;
+        Transform maskLeft = Instantiate(navmeshMaskPrefab, Vector3.left * ((map.mapSize.x + maxMapSize.x) / 4f), Quaternion.identity) as Transform;
+        maskLeft.localScale = new Vector3((maxMapSize.x - map.mapSize.x) / 2f, 1, map.mapSize.y);
+        maskLeft.parent = mapHolder;
 
-        Transform maskRight = Instantiate(navmeshMaskPrefab, Vector3.right * ((map.mapSize.x + maxMapSize.x) / 4f) * tileSize, Quaternion.identity) as Transform;
-        maskRight.localScale = new Vector3((maxMapSize.x - map.mapSize.x) / 2f, 1, map.mapSize.y) * tileSize;
+        Transform maskRight = Instantiate(navmeshMaskPrefab, Vector3.right * ((map.mapSize.x + maxMapSize.x) / 4f), Quaternion.identity) as Transform;
+        maskRight.localScale = new Vector3((maxMapSize.x - map.mapSize.x) / 2f, 1, map.mapSize.y);
+        maskRight.parent = mapHolder;
 
-        Transform maskTop = Instantiate(navmeshMaskPrefab, Vector3.forward * ((map.mapSize.y + maxMapSize.y) / 4f) * tileSize, Quaternion.identity) as Transform;
-        maskTop.localScale = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.mapSize.y) / 2f) * tileSize;
+        Transform maskTop = Instantiate(navmeshMaskPrefab, Vector3.forward * ((map.mapSize.y + maxMapSize.y) / 4f), Quaternion.identity) as Transform;
+        maskTop.localScale = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.mapSize.y) / 2f);
+        maskTop.parent = mapHolder;
 
-        Transform maskBottom = Instantiate(navmeshMaskPrefab, Vector3.back * ((map.mapSize.y + maxMapSize.y) / 4f) * tileSize, Quaternion.identity) as Transform;
-        maskBottom.localScale = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.mapSize.y) / 2f) * tileSize;
+        Transform maskBottom = Instantiate(navmeshMaskPrefab, Vector3.back * ((map.mapSize.y + maxMapSize.y) / 4f), Quaternion.identity) as Transform;
+        maskBottom.localScale = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.mapSize.y) / 2f);
+        maskBottom.parent = mapHolder;
 
-        navmeshFloor.localScale = new Vector3(maxMapSize.x, maxMapSize.y) * tileSize;//Navmesh floor = MaxMapsize
+        navmeshFloor.localScale = new Vector3(maxMapSize.x, maxMapSize.y);//Navmesh floor = MaxMapsize
     }
 
-    private void GenerateFloor(Transform doorsHolder)
+    private void GenerateMesh(Transform doorsHolder)
     {
         Mesh floorMesh = new Mesh();
         Mesh wallMesh = new Mesh();
-        baseVertices = new List<Vector3>();
+        floorVertices = new List<Vector3>();
         wallVertices = new List<Vector3>();
         int[] floorTriangles;
         int[] wallTriangles;
@@ -93,7 +103,7 @@ public class MapGenerator : Module
             GenerateQuadWalls(out wallTriangles, doorsHolder);
         }
 
-        floorMesh.vertices = baseVertices.ToArray();
+        floorMesh.vertices = floorVertices.ToArray();
         floorMesh.triangles = floorTriangles;
         floorMesh.RecalculateNormals();
         floorMF.sharedMesh = floorMesh;
@@ -111,12 +121,12 @@ public class MapGenerator : Module
     {
         triangles = new int[6];
 
-        baseVertices.Add(CoordToPosition(0, 0));
-        baseVertices.Add(CoordToPosition(map.mapSize.x-1, 0));
-        baseVertices.Add(CoordToPosition(map.mapSize.x-1, map.mapSize.y-1));
-        baseVertices.Add(CoordToPosition(0, map.mapSize.y-1));
+        floorVertices.Add(CoordToPosition(0, 0));
+        floorVertices.Add(CoordToPosition(map.mapSize.x-1, 0));
+        floorVertices.Add(CoordToPosition(map.mapSize.x-1, map.mapSize.y-1));
+        floorVertices.Add(CoordToPosition(0, map.mapSize.y-1));
 
-        wallVertices = new List<Vector3>(baseVertices);
+        wallVertices = new List<Vector3>(floorVertices);
 
         CreateQuad(triangles, 0, 0, 1, 3, 2);
 
@@ -127,14 +137,14 @@ public class MapGenerator : Module
 
         triangles = new int[6 * 4];
 
-        baseVertices.Add(CoordToPosition(0, 0));
-        baseVertices.Add(CoordToPosition(map.mapSize.x-1, 0));
-        baseVertices.Add(CoordToPosition(map.mapSize.x-1, map.corridorSize.y));
-        baseVertices.Add(CoordToPosition(map.corridorSize.x, map.corridorSize.y));
-        baseVertices.Add(CoordToPosition(map.corridorSize.x, map.mapSize.y-1));
-        baseVertices.Add(CoordToPosition(0, map.mapSize.y-1));
+        floorVertices.Add(CoordToPosition(0, 0));
+        floorVertices.Add(CoordToPosition(map.mapSize.x-1, 0));
+        floorVertices.Add(CoordToPosition(map.mapSize.x-1, map.corridorSize.y));
+        floorVertices.Add(CoordToPosition(map.corridorSize.x, map.corridorSize.y));
+        floorVertices.Add(CoordToPosition(map.corridorSize.x, map.mapSize.y-1));
+        floorVertices.Add(CoordToPosition(0, map.mapSize.y-1));
 
-        wallVertices = new List<Vector3>(baseVertices);
+        wallVertices = new List<Vector3>(floorVertices);
 
         int t = 0;
         t = CreateQuad(triangles, t, 0, 1, 3, 2);
@@ -148,6 +158,7 @@ public class MapGenerator : Module
         Array.Copy(doors, doorsReplica, doors.Length);
         Array.Sort(doorsReplica);
 
+        //Add vertices to represent the doors
         if (doorsReplica.Length > 0)
         {
             for (int i = doorsReplica.Length - 1; i >= 0; i--)
@@ -191,9 +202,9 @@ public class MapGenerator : Module
                 }
             }
         }
+        //end
 
-        wallTriangles = new int[6 * 3 * (2 * wallVertices.Count - baseVertices.Count)];
-
+        wallTriangles = new int[6 * 3 * (2 * wallVertices.Count - floorVertices.Count)];
         int ring = wallVertices.Count;
 
         //Add the ceiling vertices
@@ -205,8 +216,8 @@ public class MapGenerator : Module
         wallVertices.Add(wallVertices[0 + ring] + vec);
         for (int i = 1; i < ring; i++)
         {
-            if (baseVertices.Contains(wallVertices[i]))
-                if (wallVertices[i] == baseVertices[3])
+            if (floorVertices.Contains(wallVertices[i]))
+                if (wallVertices[i] == floorVertices[3])
                     vec = Quaternion.AngleAxis(135f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
                 else
                     vec = Quaternion.AngleAxis(45f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
@@ -220,8 +231,8 @@ public class MapGenerator : Module
         wallVertices.Add(wallVertices[0] + vec);
         for (int i = 1; i < ring; i++)
         {
-            if (baseVertices.Contains(wallVertices[i]))
-                if (wallVertices[i] == baseVertices[3])
+            if (floorVertices.Contains(wallVertices[i]))
+                if (wallVertices[i] == floorVertices[3])
                     vec = Quaternion.AngleAxis(135f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
                 else
                     vec = Quaternion.AngleAxis(45f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
@@ -230,41 +241,20 @@ public class MapGenerator : Module
             wallVertices.Add(wallVertices[i] + vec);
         }
 
+        //Add the triangles
         int t = 0;
         int v = 0;
         int doorIndex = 0;
         bool firstDoorVertice = true;
         for (int i = 0; i < ring - 1; i++, v++)
         {
-            if (!baseVertices.Contains(wallVertices[i]))
+            if (!floorVertices.Contains(wallVertices[i]))
             {
                 if (firstDoorVertice)
                 {
-                    float doorHeight = doorsReplica[doorIndex].doorHeight;
-
-                    wallVertices.Add(wallVertices[i] + Vector3.up * doorHeight);
-                    wallVertices.Add(wallVertices[i + 1] + Vector3.up * doorHeight);
-                    vec = Quaternion.AngleAxis(90f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth) + Vector3.up * doorHeight;
-                    wallVertices.Add(wallVertices[i] + vec);
-                    wallVertices.Add(wallVertices[i + 1] + vec);
-
-                    t = CreateQuad(wallTriangles, t, wallVertices.Count - 4, wallVertices.Count - 3, i + ring, i + ring + 1);
-                    t = CreateQuad(wallTriangles, t, i + ring, i + ring + 1, i + ring * 2, i + ring * 2 + 1);
-                    t = CreateQuad(wallTriangles, t, wallVertices.Count - 2, wallVertices.Count - 1, i + ring * 2, i + ring * 2 + 1, true);
-
-                    Transform doorInstance = Instantiate(doorsReplica[doorIndex].roomDoorPrefab);
-                    Transform connection = doorInstance.FindChild("Connector");
-                    Vector3 childLocalPos = connection.localPosition;//Store the child to parent position offset
-                    connection.GetComponent<Exit>().Room = transform;
-                    connection.parent = null;//so the child moves freely
-                    connection.position = wallVertices[i] + (wallVertices[i + 1] - wallVertices[i]) / 2 + (wallVertices[i + ring * 3] - wallVertices[i]) / 2;
-                    doorInstance.position = connection.position - childLocalPos;
-                    connection.parent = doorInstance;
-                    doorInstance.forward = Quaternion.AngleAxis(-90f, Vector3.up) * (wallVertices[i + 1] - wallVertices[i]);
-                    doorInstance.parent = doorsHolder;
-                    doorIndex++;
-
+                    SpawnDoor(wallTriangles, doorsHolder, doorsReplica, ring, ref t, ref doorIndex, i);
                 }
+
                 firstDoorVertice = !firstDoorVertice;
             }
 
@@ -321,7 +311,7 @@ public class MapGenerator : Module
             }
         }
 
-        wallTriangles = new int[6 * 3 * (2*wallVertices.Count - baseVertices.Count)];
+        wallTriangles = new int[6 * 3 * (2*wallVertices.Count - floorVertices.Count)];
         int ring = wallVertices.Count;
 
         //Add the ceiling vertices
@@ -333,7 +323,7 @@ public class MapGenerator : Module
         wallVertices.Add(wallVertices[0 + ring] + vec);
         for (int i = 1; i < ring; i++)
         {
-            if (baseVertices.Contains(wallVertices[i]))
+            if (floorVertices.Contains(wallVertices[i]))
                 vec = Quaternion.AngleAxis(45f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
             else
                 vec = Quaternion.AngleAxis(90f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
@@ -345,7 +335,7 @@ public class MapGenerator : Module
         wallVertices.Add(wallVertices[0] + vec);
         for (int i = 1; i < ring; i++)
         {
-            if (baseVertices.Contains(wallVertices[i]))
+            if (floorVertices.Contains(wallVertices[i]))
                 vec = Quaternion.AngleAxis(45f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
             else
                 vec = Quaternion.AngleAxis(90f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth);
@@ -359,34 +349,11 @@ public class MapGenerator : Module
         bool firstDoorVertice = true;
         for (int i = 0; i < ring - 1; i++, v++)
         {
-            if (!baseVertices.Contains(wallVertices[i]))
+            if (!floorVertices.Contains(wallVertices[i]))
             {
                 if (firstDoorVertice)
                 {
-                    float doorHeight = doorsReplica[doorIndex].doorHeight;
-
-                    wallVertices.Add(wallVertices[i] + Vector3.up * doorHeight);
-                    wallVertices.Add(wallVertices[i + 1] + Vector3.up * doorHeight);
-                    vec = Quaternion.AngleAxis(90f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth) + Vector3.up* doorHeight;
-                    wallVertices.Add(wallVertices[i] + vec);
-                    wallVertices.Add(wallVertices[i + 1] + vec);
-
-                    t = CreateQuad(wallTriangles, t, wallVertices.Count-4, wallVertices.Count-3, i + ring, i + ring + 1);
-                    t = CreateQuad(wallTriangles, t, i + ring, i + ring + 1, i + ring * 2, i + ring * 2 + 1);
-                    t = CreateQuad(wallTriangles, t, wallVertices.Count-2, wallVertices.Count-1, i + ring * 2, i + ring * 2 + 1, true);
-
-                    Transform doorInstance = Instantiate(doorsReplica[doorIndex].roomDoorPrefab);
-                    Transform connection = doorInstance.FindChild("Connector");
-                    Vector3 childLocalPos = connection.localPosition;//Store the child to parent position offset
-                    connection.GetComponent<Exit>().Room = transform;
-                    connection.parent = null;//so the child moves freely
-                    connection.position = wallVertices[i] + (wallVertices[i + 1] - wallVertices[i]) / 2 + (wallVertices[i+ring*3]-wallVertices[i])/2;
-                    doorInstance.position = connection.position - childLocalPos;
-                    connection.parent = doorInstance;
-                    doorInstance.forward = Quaternion.AngleAxis(-90f, Vector3.up) * (wallVertices[i + 1] - wallVertices[i]);
-                    doorInstance.parent = doorsHolder;
-                    doorIndex++;
-                    
+                    SpawnDoor(wallTriangles, doorsHolder, doorsReplica, ring, ref t, ref doorIndex, i);
                 }
                 firstDoorVertice = !firstDoorVertice;
             }
@@ -421,7 +388,34 @@ public class MapGenerator : Module
 
     public Vector3 CoordToPosition(float x, float y)
     {
-        return transform.position + new Vector3(-map.mapSize.x / 2f + 0.5f + x, 0, -map.mapSize.y / 2f + 0.5f + y) *tileSize;
+        return transform.position + new Vector3(-map.mapSize.x / 2f + 0.5f + x, 0, -map.mapSize.y / 2f + 0.5f + y);
+    }
+
+    private void SpawnDoor(int[] wallTriangles, Transform doorsHolder, Door[] doorsReplica, int ring, ref int t, ref int doorIndex, int i)
+    {
+        float doorHeight = doorsReplica[doorIndex].doorHeight;
+
+        wallVertices.Add(wallVertices[i] + Vector3.up * doorHeight);
+        wallVertices.Add(wallVertices[i + 1] + Vector3.up * doorHeight);
+        Vector3 vec = Quaternion.AngleAxis(90f, wallVertices[i + ring] - wallVertices[i]) * ((wallVertices[i - 1] - wallVertices[i]).normalized * map.wallDepth) + Vector3.up * doorHeight;
+        wallVertices.Add(wallVertices[i] + vec);
+        wallVertices.Add(wallVertices[i + 1] + vec);
+
+        t = CreateQuad(wallTriangles, t, wallVertices.Count - 4, wallVertices.Count - 3, i + ring, i + ring + 1);
+        t = CreateQuad(wallTriangles, t, i + ring, i + ring + 1, i + ring * 2, i + ring * 2 + 1);
+        t = CreateQuad(wallTriangles, t, wallVertices.Count - 2, wallVertices.Count - 1, i + ring * 2, i + ring * 2 + 1, true);
+
+        Transform doorInstance = Instantiate(doorsReplica[doorIndex].roomDoorPrefab);
+        Transform connection = doorInstance.FindChild("Connector");
+        Vector3 childLocalPos = connection.localPosition;//Store the child to parent position offset
+        connection.GetComponent<Exit>().Room = transform;
+        connection.parent = null;//so the child moves freely
+        connection.position = wallVertices[i] + (wallVertices[i + 1] - wallVertices[i]) / 2 + (wallVertices[i + ring * 3] - wallVertices[i]) / 2;
+        doorInstance.position = connection.position - childLocalPos;
+        connection.parent = doorInstance;
+        doorInstance.forward = Quaternion.AngleAxis(-90f, Vector3.up) * (wallVertices[i + 1] - wallVertices[i]);
+        doorInstance.parent = doorsHolder;
+        doorIndex++;
     }
 
 
