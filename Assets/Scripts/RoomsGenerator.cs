@@ -11,12 +11,7 @@ public class RoomsGenerator : MonoBehaviour {
 
     public void GenerateRooms()
     {
-        StartCoroutine(Generate());
-    }
-
-    IEnumerator Generate()
-    {
-        string holderName = "Generated Map";
+       string holderName = "Generated Map";
         if (transform.FindChild(holderName) != null)
             DestroyImmediate(transform.FindChild(holderName).gameObject);
 
@@ -47,17 +42,15 @@ public class RoomsGenerator : MonoBehaviour {
                 newExits.AddRange(newModuleExits.FindAll(e => e != exitToMatch));
 
                 newModule.transform.parent = generatedMap;
-
-                Debug.Log("ok");
-                yield return new WaitForSeconds(1f);
             }
 
-            Debug.Log(i);
             pendingExits = newExits;
         }
 
         Module[] instantiatedModules = generatedMap.GetComponentsInChildren<Module>();
     }
+
+    
 
     private Exit GetAppropriateExit(List<Exit> exits)
     {

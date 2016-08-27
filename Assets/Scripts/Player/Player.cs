@@ -29,7 +29,7 @@ public class Player : LivingEntity {
 		viewCamera = Camera.main;
 	}
 
-    protected override void Update()
+    void Update()
     {
         GetInputAndMove();
         HandleTouchInput();
@@ -63,6 +63,13 @@ public class Player : LivingEntity {
             gunController.Shoot();
             break;
     	}
+
+        if (Input.GetKeyDown(KeyCode.Space))
+            gunController.Shoot();
+        if (Input.GetKeyDown(KeyCode.Z))
+            controller.Rotate(new Vector3(0f, -90f, 0f));
+        if (Input.GetKeyDown(KeyCode.X))
+            controller.Rotate(new Vector3(0f, 90f, 0f));
     }
 
     public override void Die()

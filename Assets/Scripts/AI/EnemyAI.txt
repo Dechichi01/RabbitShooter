@@ -1,29 +1,17 @@
 tree("Root")
 	sequence
-		StartChase()
+		StartWatch()
 		repeat()
-			sequence	
-				tree("BabyCrib")
-				tree("Player")
-
-tree("BabyCrib")
-	sequence
-		mute 
-			while
-				shouldChaseCrib
-				SetTarget(1)
-		mute 
-			while
-				canAttack
-				Attack(1)
+			tree("Player")
 
 tree("Player")
 	sequence
 		mute 
-			while
-				shouldChasePlayer
-				SetTarget(2)
+			sequence
+				playerInSight
+				not isChasing
+				StartChase()
 		mute 
 			while
 				canAttack
-				Attack(2)
+				Attack()

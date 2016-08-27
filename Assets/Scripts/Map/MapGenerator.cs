@@ -252,7 +252,7 @@ public class MapGenerator : Module
                     t = CreateQuad(wallTriangles, t, i + ring, i + ring + 1, i + ring * 2, i + ring * 2 + 1);
                     t = CreateQuad(wallTriangles, t, wallVertices.Count - 2, wallVertices.Count - 1, i + ring * 2, i + ring * 2 + 1, true);
 
-                    /*Transform doorInstance = Instantiate(doorsReplica[doorIndex].roomDoorPrefab);
+                    Transform doorInstance = Instantiate(doorsReplica[doorIndex].roomDoorPrefab);
                     Transform connection = doorInstance.FindChild("Connector");
                     Vector3 childLocalPos = connection.localPosition;//Store the child to parent position offset
                     connection.GetComponent<Exit>().Room = transform;
@@ -262,7 +262,7 @@ public class MapGenerator : Module
                     connection.parent = doorInstance;
                     doorInstance.forward = Quaternion.AngleAxis(-90f, Vector3.up) * (wallVertices[i + 1] - wallVertices[i]);
                     doorInstance.parent = doorsHolder;
-                    doorIndex++;*/
+                    doorIndex++;
 
                 }
                 firstDoorVertice = !firstDoorVertice;
@@ -363,7 +363,7 @@ public class MapGenerator : Module
             {
                 if (firstDoorVertice)
                 {
-                    /*float doorHeight = doorsReplica[doorIndex].doorHeight;
+                    float doorHeight = doorsReplica[doorIndex].doorHeight;
 
                     wallVertices.Add(wallVertices[i] + Vector3.up * doorHeight);
                     wallVertices.Add(wallVertices[i + 1] + Vector3.up * doorHeight);
@@ -373,9 +373,9 @@ public class MapGenerator : Module
 
                     t = CreateQuad(wallTriangles, t, wallVertices.Count-4, wallVertices.Count-3, i + ring, i + ring + 1);
                     t = CreateQuad(wallTriangles, t, i + ring, i + ring + 1, i + ring * 2, i + ring * 2 + 1);
-                    t = CreateQuad(wallTriangles, t, wallVertices.Count-2, wallVertices.Count-1, i + ring * 2, i + ring * 2 + 1, true);*/
+                    t = CreateQuad(wallTriangles, t, wallVertices.Count-2, wallVertices.Count-1, i + ring * 2, i + ring * 2 + 1, true);
 
-                    /*Transform doorInstance = Instantiate(doorsReplica[doorIndex].roomDoorPrefab);
+                    Transform doorInstance = Instantiate(doorsReplica[doorIndex].roomDoorPrefab);
                     Transform connection = doorInstance.FindChild("Connector");
                     Vector3 childLocalPos = connection.localPosition;//Store the child to parent position offset
                     connection.GetComponent<Exit>().Room = transform;
@@ -386,7 +386,7 @@ public class MapGenerator : Module
                     doorInstance.forward = Quaternion.AngleAxis(-90f, Vector3.up) * (wallVertices[i + 1] - wallVertices[i]);
                     doorInstance.parent = doorsHolder;
                     doorIndex++;
-                    */
+                    
                 }
                 firstDoorVertice = !firstDoorVertice;
             }

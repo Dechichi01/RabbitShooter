@@ -5,30 +5,26 @@ using Panda;
 public class Enemy : LivingEntity {
 
 	public enum State {Idle, Chasing, Attacking};
-	State currentState;
+	public State currentState;
 
     /// <summary>
     /// Used by the AI BT
     /// </summary>
+
     [Task]
-    public bool shouldChaseCrib { get { return (!(currentState == State.Attacking) && (!isBeingAttacked)); } }
-    [Task]
-    public bool shouldChasePlayer { get
-        {
-            return isBeingAttacked && !isAttacking;
-        }
-    }
+    public bool playerInSight { get { return !isAttacking && !isFending && FOV.visibleTargets.Count > 0;   }    }
+    //[Task]
+    //public bool chasingPlayer { get { return isChasing; } }
     [Task]
     public bool canAttack { get
         {
-            if (hasTarget)
+            if (hasTarget && !isFending)
             {
                 if (Time.time > nextAttackTime)
                 {
-                    float sqrDstToTarget = (currentTarget.thisTransform.position - transform.position).sqrMagnitude; //take the distance between two positions in sqrMagnitude
-                    float horizontalDist = Mathf.Pow(attackDistanceThreshold + myCollisionRadius + currentTarget.minPlaneDist.x, 2);
-                    float verticalDist = Mathf.Pow(attackDistanceThreshold + myCollisionRadius + currentTarget.minPlaneDist.y, 2);
-                    if (sqrDstToTarget < horizontalDist || sqrDstToTarget < verticalDist)
+                    float sqrDstToTarget = (playerTarget.thisTransform.position - transform.position).sqrMagnitude; //take the distance between two positions in sqrMagnitude
+                    float radius = Mathf.Pow(attackDistanceThreshold + myCollisionRadius + playerTarget.radius, 2);
+                    if (sqrDstToTarget <= radius)
                     {
                         nextAttackTime = Time.time + timeBetweenAttacks;
                         return true;
@@ -41,13 +37,12 @@ public class Enemy : LivingEntity {
 
 	NavMeshAgent navAgent;
 
-	Target currentTarget;
-    Target playerTarget;
+	Target playerTarget;
+
+    FieldOfView FOV;
 
 	LivingEntity targetLivingEntity;
 	Material skinMaterial;
-
-	Color originalColour;
 
     public ParticleSystem deathEffect;
 
@@ -63,9 +58,13 @@ public class Enemy : LivingEntity {
 
     bool hasTarget;
     bool isAttacking;
+    bool isFending;
+    [Task]
+    bool isChasing;
 
     void Awake()
     {
+        FOV = GetComponent<FieldOfView>();
         navAgent = GetComponent<NavMeshAgent>();
         navAgent.enabled = false;
 
@@ -75,29 +74,22 @@ public class Enemy : LivingEntity {
         {
             hasTarget = true;
             Transform playerT = GameObject.FindGameObjectWithTag("Player").transform;
-            playerTarget = new Target("Player", playerT, Vector2.one*playerT.GetComponent<CapsuleCollider>().radius);
+            playerTarget = new Target("Player", playerT, playerT.GetComponent<CapsuleCollider>().radius);
             targetLivingEntity = playerTarget.thisTransform.GetComponent<LivingEntity>();
 
             myCollisionRadius = GetComponent<CapsuleCollider>().radius;
         }
-
-        currentTarget = playerTarget;
     }
 
 	override protected void Start () {
 		base.Start();
 	}
 
-    protected override void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Space))
-            TakeHit(0, Vector3.zero, Vector3.zero);
-        base.Update();
-    }
-
     [Task]
-    public void StartChase()
+    public bool StartChase()
     {
+        StopAllCoroutines();
+        isChasing = true;
         navAgent.enabled = true;
         if (hasTarget)
         {
@@ -107,29 +99,26 @@ public class Enemy : LivingEntity {
             StartCoroutine(UpdatePath());
             Task.current.Succeed();
         }
-        Task.current.Succeed();
+        return true;
     }
 
     [Task]
-    void Attack(int target)
+    public bool StartWatch()
+    {
+        StopAllCoroutines();
+        isChasing = false;
+        StartCoroutine(Watch());
+        return true;
+    }
+
+    [Task]
+    bool Attack()
     {
         AudioManager.instance.PlaySound("Enemy Attack", transform.position);
 
-        if (target==1)
-            StartCoroutine(AttackBabyCrib());
-        else
-            StartCoroutine(AttackPlayer());
-        Task.current.Succeed();
+        StartCoroutine(AttackPlayer());
+        return true;
     }
-
-    [Task]
-    void SetTarget(int target)
-    {
-        currentTarget = playerTarget;
-
-        Task.current.Succeed();
-    }
-
 
     public override void TakeHit(float damage, Vector3 hitPoint, Vector3 hitDirection)
     {
@@ -142,6 +131,7 @@ public class Enemy : LivingEntity {
             Destroy(Instantiate(deathEffect.gameObject, hitPoint, Quaternion.FromToRotation(Vector3.forward,hitDirection)) as GameObject, deathEffect.startLifetime);
         }
         base.TakeHit(damage, hitPoint, hitDirection);
+        //StartCoroutine(Fend());
     }
 
     void OnTargetDeath(){
@@ -159,15 +149,16 @@ public class Enemy : LivingEntity {
         startingHealth = enemyHealth;
 
     }
-	IEnumerator AttackPlayer(){
+
+    IEnumerator AttackPlayer(){
 
         isAttacking = true;
 		currentState = State.Attacking;
 		navAgent.enabled = false;
 
         Vector3 originalPosition = transform.position;
-		Vector3 dirToTarget = (currentTarget.thisTransform.position - transform.position).normalized;
-		Vector3 attackPosition = currentTarget.thisTransform.position - dirToTarget*(myCollisionRadius);
+		Vector3 dirToTarget = (playerTarget.thisTransform.position - transform.position).normalized;
+		Vector3 attackPosition = playerTarget.thisTransform.position - dirToTarget*(myCollisionRadius);
 
 		float attackSpeed = 3;
 		float percent = 0;
@@ -175,7 +166,7 @@ public class Enemy : LivingEntity {
 
 
 		while (percent <= 1){
-			if (currentTarget.name == "Player" && percent >= 0.5 && !hasAppliedDamage){
+			if (playerTarget.name == "Player" && percent >= 0.5 && !hasAppliedDamage){
 				hasAppliedDamage = true;
 				targetLivingEntity.TakeDamage(damage);
 			}
@@ -193,50 +184,13 @@ public class Enemy : LivingEntity {
         isAttacking = false;
 	}
 
-    IEnumerator AttackBabyCrib()
-    {
-
-        isAttacking = true;
-        currentState = State.Attacking;
-        navAgent.enabled = false;
-
-        Vector3 originalPosition = transform.position;
-        Vector3 dirToTarget = (currentTarget.thisTransform.position - transform.position).normalized;
-        Vector3 attackPosition = transform.position + dirToTarget*0.4f;
-
-        float attackSpeed = 3;
-        float percent = 0;
-        bool hasAppliedDamage = false;
-
-
-        while (percent <= 1)
-        {
-            if (currentTarget.name == "Player" && percent >= 0.5 && !hasAppliedDamage)
-            {
-                hasAppliedDamage = true;
-                targetLivingEntity.TakeDamage(damage);
-            }
-
-            percent += Time.deltaTime * attackSpeed;
-            float interpolation = (-Mathf.Pow(percent, 2) + percent) * 4;
-            transform.position = Vector3.Lerp(originalPosition, attackPosition, interpolation);
-
-            yield return null;
-        }
-
-        //skinMaterial.color = originalColour;
-        currentState = State.Chasing;
-        navAgent.enabled = true;
-        isAttacking = false;
-    }
-
     IEnumerator UpdatePath(){            
-        float refreashRate = 0.5f;
+        float refreashRate = 0.2f;
 
         while (hasTarget){
 			if (currentState == State.Chasing){
-				Vector3 dirToTarget = (currentTarget.thisTransform.position - transform.position).normalized;
-				Vector3 targetPosition = currentTarget.thisTransform.position - dirToTarget*(myCollisionRadius + currentTarget.minPlaneDist.x + attackDistanceThreshold/2);
+				Vector3 dirToTarget = (playerTarget.thisTransform.position - transform.position).normalized;
+				Vector3 targetPosition = playerTarget.thisTransform.position - dirToTarget*(myCollisionRadius + playerTarget.radius/2 + attackDistanceThreshold/2);
 				if (!dead){
 					navAgent.SetDestination(targetPosition);	
 				}
@@ -244,19 +198,57 @@ public class Enemy : LivingEntity {
 			yield return new WaitForSeconds(refreashRate);
 		}
 	}
+
+    IEnumerator Watch()
+    {
+        float percent = 0;
+        float turnTime = 0.6f;
+        Quaternion start, end;
+        while (true)
+        {
+            start = transform.rotation;
+            end = transform.rotation * Quaternion.Euler(0f, 90f, 0f);
+
+            percent = 0;
+            while (percent < 1)
+            {
+                percent += ((1 / turnTime) * Time.deltaTime);
+                transform.rotation = Quaternion.Lerp(start, end, percent);
+                yield return null;
+            }
+            yield return new WaitForSeconds(1);
+        }
+    }
+
+    IEnumerator Fend()
+    {
+        Vector3 start = transform.position;
+        Vector3 end = start - (playerTarget.thisTransform.position - start).normalized;
+        float percent = 0;
+        float fendSpeed = 1 / 0.05f;
+
+        isFending = true;
+        while (percent < 1)
+        {
+            percent += fendSpeed * Time.deltaTime;
+            transform.position = Vector3.Lerp(start, end, percent);
+            yield return null;
+        }
+        isFending = false;
+    }
 }
 
 public class Target
 {
     public string name;
     public Transform thisTransform;
-    public Vector2 minPlaneDist;
+    public float radius;
 
-    public Target(string name, Transform thisTransform, Vector2 minPlaneDist)
+    public Target(string name, Transform thisTransform, float radius)
     {
         this.name = name;
         this.thisTransform = thisTransform;
-        this.minPlaneDist = minPlaneDist;
+        this.radius = radius;
     }
 }
 

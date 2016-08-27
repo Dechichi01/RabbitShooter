@@ -8,24 +8,12 @@ public class LivingEntity : PoolObject, IDamageable {
 	protected bool dead;
 	public event System.Action OnDeath;
 
-    protected bool isBeingAttacked;
-    private float beingAttackedDelay = 10;
-    private float timeToResetBeingAttacked;
-
     protected virtual void Start(){
 		health = startingHealth;
 	}
 
-    protected virtual void Update()
-    {
-        if (Time.time > timeToResetBeingAttacked)
-            isBeingAttacked = false;
-    }
-
     public virtual void TakeHit(float damage, Vector3 hitPoint, Vector3 hitDirection){
         //TODO: Some stuffs with hit
-        isBeingAttacked = true;
-        timeToResetBeingAttacked = Time.time + beingAttackedDelay;
 
         TakeDamage(damage);
 	}
