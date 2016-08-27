@@ -48,8 +48,11 @@ public class PlayerController : MonoBehaviour {
 
 	public void Rotate(Vector3 rotation)
 	{
-		StopCoroutine("PerformRotation");
-		StartCoroutine(PerformRotation(rotation));
+        if (!isTurning)
+        {
+            StopCoroutine("PerformRotation");
+            StartCoroutine(PerformRotation(rotation));
+        }
 	}
 
     void FindTarget()
@@ -72,9 +75,10 @@ public class PlayerController : MonoBehaviour {
 
 	IEnumerator PerformRotation(Vector3 rotation)
 	{
-		float remainingRot = Mathf.Abs(rotation.y);
-		float rotSign = rotation.y/remainingRot;
-		float rotEachFrame = rotation.y;
+        Quaternion start = player.transform.rotation;
+        Quaternion end = player.transform.rotation * Quaternion.Euler(rotation);
+
+		float rotSign = rotation.y/ Mathf.Abs(rotation.y);
 
         isTurning = true;
 
@@ -96,33 +100,30 @@ public class PlayerController : MonoBehaviour {
             }
         }
 
-		while(isTurning)
+        float percent = 0f;
+        while (percent<1)
 		{
-			remainingRot-=(rotEachFrame*Time.deltaTime*turnSpeed*rotSign);
-			player.transform.Rotate(Vector3.up*rotEachFrame*Time.deltaTime*turnSpeed);
+            percent += (turnSpeed * Time.deltaTime);
+            player.transform.rotation = Quaternion.Lerp(start, end, percent);
 
             visibleTargets = FOV.visibleTargets.ToArray();
             if (visibleTargets.Length > 0)
             {
                 foreach (Transform target in visibleTargets)
                 {
-                    if (target.name == "Target") Debug.Log("Ok");
                     if (!targetToIgnore.Contains(target))
                     {
                         currentTarget = target;
                         LookAtPoint(target.position);
-                        remainingRot = -80f;//So we end the method
                         break; //So we break the loop
                     }
                 }
             }
-            if (remainingRot <=0f)
-            {
-                isTurning = false;
-                break;
-            }
-			yield return new WaitForFixedUpdate();
+
+			yield return null;
 		}
-		yield return null;
+
+        isTurning = false;
+
 	}
 }

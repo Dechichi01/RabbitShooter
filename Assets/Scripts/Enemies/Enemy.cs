@@ -51,6 +51,7 @@ public class Enemy : LivingEntity {
 	float damage = 1f;
 
 	public float attackDistanceThreshold = .5f;
+    public float refreshRate = 0.2f;
 	float timeBetweenAttacks = 1;
 
 	float nextAttackTime;
@@ -185,7 +186,6 @@ public class Enemy : LivingEntity {
 	}
 
     IEnumerator UpdatePath(){            
-        float refreashRate = 0.2f;
 
         while (hasTarget){
 			if (currentState == State.Chasing){
@@ -195,7 +195,7 @@ public class Enemy : LivingEntity {
 					navAgent.SetDestination(targetPosition);	
 				}
 			}
-			yield return new WaitForSeconds(refreashRate);
+			yield return new WaitForSeconds(refreshRate);
 		}
 	}
 

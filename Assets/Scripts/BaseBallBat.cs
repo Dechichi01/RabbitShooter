@@ -25,7 +25,7 @@ public class BaseBallBat : Weapon {
             IDamageable damageableObject = collider.GetComponent<IDamageable>();
             if (damageableObject != null)
             {
-                damageableObject.TakeHit(damage, collider.transform.position, transform.forward, 2f);
+                damageableObject.TakeHit(damage, collider.transform.position, transform.forward, 2.5f);
             }
         }
     }
@@ -36,22 +36,25 @@ public class BaseBallBat : Weapon {
         float percent = 0;
         float velocity = 1 / 0.1f;
 
-        Quaternion start = transform.rotation;
-        Quaternion end = transform.rotation * Quaternion.Euler(Vector3.forward*-90f);
+        Vector3 startRot = transform.localRotation.eulerAngles;
+        float start = startRot.x;
+        float end = start + 90f;
+        //Quaternion start = transform.rotation;
+        //Quaternion end = transform.rotation * Quaternion.Euler(transform.parent.parent.forward*-90f);
         while(percent<1)
         {
             percent += (velocity * Time.deltaTime);
-            transform.rotation = Quaternion.Lerp(start, end, percent);
+            transform.localRotation = Quaternion.Euler(Mathf.Lerp(start, end, percent), startRot.x, startRot.z);
             yield return null;
         }
         while(percent>0)
         {
             percent -= (velocity * Time.deltaTime);
-            transform.rotation = Quaternion.Lerp(start, end, percent);
+            transform.localRotation = Quaternion.Euler(Mathf.Lerp(start, end, percent), startRot.x, startRot.z);
             yield return null;
         }
 
-        transform.rotation = start;
+        //transform.rotation = start;
         isUsing = false;
     }
 }
