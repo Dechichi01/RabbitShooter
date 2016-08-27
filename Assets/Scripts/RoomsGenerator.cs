@@ -11,6 +11,11 @@ public class RoomsGenerator : MonoBehaviour {
 
     public void GenerateRooms()
     {
+        StartCoroutine(Generate());
+    }
+
+    IEnumerator Generate()
+    {
         string holderName = "Generated Map";
         if (transform.FindChild(holderName) != null)
             DestroyImmediate(transform.FindChild(holderName).gameObject);
@@ -19,7 +24,7 @@ public class RoomsGenerator : MonoBehaviour {
         generatedMap.parent = transform;
 
 
-        Module startingModule = (Module) Instantiate(startModule, transform.position, transform.rotation);
+        Module startingModule = (Module)Instantiate(startModule, transform.position, transform.rotation);
         startingModule.transform.GetComponent<MapGenerator>().GenerateMap();////////--------------VER ISSO
         startingModule.transform.parent = generatedMap;
         List<Exit> pendingExits = startingModule.GetExits();
@@ -30,7 +35,7 @@ public class RoomsGenerator : MonoBehaviour {
         {
             List<Exit> newExits = new List<Exit>();
 
-            foreach(Exit exit in pendingExits)
+            foreach (Exit exit in pendingExits)
             {
                 string newTag = exit.GetRandomConnectTag();
                 Module newModulePrefab = GetRandomWithTag(modules, newTag);
@@ -42,8 +47,12 @@ public class RoomsGenerator : MonoBehaviour {
                 newExits.AddRange(newModuleExits.FindAll(e => e != exitToMatch));
 
                 newModule.transform.parent = generatedMap;
+
+                Debug.Log("ok");
+                yield return new WaitForSeconds(1f);
             }
 
+            Debug.Log(i);
             pendingExits = newExits;
         }
 
@@ -82,11 +91,9 @@ public class RoomsGenerator : MonoBehaviour {
         List<Module> matchingModules = new List<Module>();
         for (int i = 0; i < modules.Length; i++)
         {
-            Debug.Log(modules[i].Tag);
             if (modules[i].Tag == tagToMatch)
                 matchingModules.Add(modules[i]);            
         }
-        Debug.Log(matchingModules.Count);
         return matchingModules[Random.Range(0, matchingModules.Count)];
     }
 
