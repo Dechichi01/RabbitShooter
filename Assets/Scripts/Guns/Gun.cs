@@ -50,11 +50,9 @@ public class Gun : MonoBehaviour {
 
 			nextShotTime = Time.time + msBetweenShots/1000;
             Projectile newProjectile = PoolManager.instance.ReuseObject(projectile.gameObject, muzzle.position, muzzle.rotation).GetComponent<Projectile>();
-			//Projectile newProjectile = (Projectile) Instantiate(projectile, muzzle.position, muzzle.rotation);
 			newProjectile.SetSpeed(muzzleVelocity);
 
             PoolManager.instance.ReuseObject(shell.gameObject, shellEjection.position, shellEjection.rotation);
-            //Instantiate(shell, shellEjection.position, shellEjection.rotation);
             muzzleFlash.Activate();
 
             transform.localPosition -= Vector3.forward * recoil;

@@ -33,8 +33,7 @@ public class Player : LivingEntity {
     {
         GetInputAndMove();
         HandleTouchInput();
-        controller.Aim();
-      
+        controller.Aim();      
     }
 
     public override void TakeDamage(float damage)
