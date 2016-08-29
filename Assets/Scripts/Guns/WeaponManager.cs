@@ -19,7 +19,7 @@ public class WeaponManager : MonoBehaviour {
 			Destroy(equippedWeapon.gameObject);
 		}
 
-        equippedWeapon = (Weapon) Instantiate(weaponToEquip);
+        equippedWeapon = Instantiate(weaponToEquip);
         equippedWeapon.Equip(weaponHold);
 	}
 

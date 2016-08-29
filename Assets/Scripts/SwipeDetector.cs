@@ -11,15 +11,17 @@ using System.Collections;
         Jump = 2, //swipe up detected
         Right = 3, //swipe right detected
         Left = 4, //swipe left detected
-        Shoot = 5
+        Attack = 5,
+        ChangeWeapon = 6
     }
 
     SwipeDirection sSwipeDirection = SwipeDirection.Null;
     public RectTransform aimJoystickRect;
-    public RectTransform shootJoystickRect;
+    public RectTransform attackJoystickRect;
+    public RectTransform changeWeaponJoystickRect;
 
-    public float minSwipeDistY = 5f;
-    public float minSwipeDistX = 5f;
+    public float minSwipeDistY = 0f;
+    public float minSwipeDistX = 0f;
 
     private Vector2 startPos;
     private float starTime;
@@ -34,12 +36,18 @@ using System.Collections;
             Touch touch = new Touch();
             foreach (Touch possibleTouch in Input.touches)
             {
-                if (RectTransformUtility.RectangleContainsScreenPoint(shootJoystickRect, possibleTouch.position))
+                if (RectTransformUtility.RectangleContainsScreenPoint(attackJoystickRect, possibleTouch.position))
                 {
                     if (possibleTouch.phase == TouchPhase.Began)
-                        sSwipeDirection = SwipeDirection.Shoot;
+                        sSwipeDirection = SwipeDirection.Attack;
                     break;
-                }                    
+                }    
+                else if (RectTransformUtility.RectangleContainsScreenPoint(changeWeaponJoystickRect, possibleTouch.position))
+                {
+                    if (possibleTouch.phase == TouchPhase.Began)
+                        sSwipeDirection = SwipeDirection.ChangeWeapon;
+                    break;
+                }             
                 else if (RectTransformUtility.RectangleContainsScreenPoint(aimJoystickRect, possibleTouch.position))
                 {
                     touch = possibleTouch;
@@ -83,7 +91,7 @@ using System.Collections;
         {
             SwipeDirection etempSwipeDirection = sSwipeDirection;
             sSwipeDirection = SwipeDirection.Null;
-
+            Debug.Log(etempSwipeDirection);
             return etempSwipeDirection;
         }
         else

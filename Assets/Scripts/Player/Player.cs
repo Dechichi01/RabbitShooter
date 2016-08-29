@@ -7,8 +7,11 @@ using UnityStandardAssets.CrossPlatformInput;
 public class Player : LivingEntity {
 
 	public float moveSpeed = 5f;
+    public Weapon[] weapons;
+    private int currentHoldWeaponIndex;
+
 	PlayerController controller;
-	WeaponManager gunController;
+	WeaponManager weaponManager;
 	Camera viewCamera;
     private SwipeDetector swipeControl;
     Vector3 aimVelocity;
@@ -23,7 +26,7 @@ public class Player : LivingEntity {
 	override protected void Start () {
 		base.Start();
 		controller = GetComponent<PlayerController>();
-		gunController = GetComponent<WeaponManager>();
+		weaponManager = GetComponent<WeaponManager>();
 		swipeControl = GetComponent<SwipeDetector>();
         animator = GetComponent<Animator>();
 		viewCamera = Camera.main;
@@ -52,23 +55,26 @@ public class Player : LivingEntity {
     {
     	switch(swipeControl.GetSwipeDirection())
         {
-    	case SwipeDetector.SwipeDirection.Right:
-			controller.Rotate(new Vector3(0f,90f,0f));
-			break;
-        case SwipeDetector.SwipeDirection.Left:
-			controller.Rotate(new Vector3(0f,-90f,0f));
-			break;
-        case SwipeDetector.SwipeDirection.Shoot:
-            gunController.Use();
-            break;
+    	    case SwipeDetector.SwipeDirection.Right:
+			    controller.Rotate(new Vector3(0f,90f,0f));
+			    break;
+            case SwipeDetector.SwipeDirection.Left:
+			    controller.Rotate(new Vector3(0f,-90f,0f));
+			    break;
+            case SwipeDetector.SwipeDirection.Jump:
+                controller.Rotate(new Vector3(0f, 90f, 0f));
+                break;
+            case SwipeDetector.SwipeDirection.Duck:
+                controller.Rotate(new Vector3(0f, -90f, 0f));
+                break;
+            case SwipeDetector.SwipeDirection.ChangeWeapon:
+                weaponManager.EquipGun(weapons[(++currentHoldWeaponIndex) % weapons.Length]);
+                break;
+            case SwipeDetector.SwipeDirection.Attack:
+                weaponManager.Use();
+                break;
     	}
 
-        if (Input.GetKeyDown(KeyCode.Space))
-            gunController.Use();
-        if (Input.GetKeyDown(KeyCode.Z))
-            controller.Rotate(new Vector3(0f, -90f, 0f));
-        if (Input.GetKeyDown(KeyCode.X))
-            controller.Rotate(new Vector3(0f, 90f, 0f));
     }
 
     public override void Die()

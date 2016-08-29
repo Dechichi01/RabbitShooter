@@ -15,6 +15,7 @@ public class BaseBallBat : Weapon {
     public override void Equip(Transform holder)
     {
         transform.position = holder.position;
+        transform.rotation = holder.rotation;
         transform.parent = holder;
     }
 
@@ -34,23 +35,27 @@ public class BaseBallBat : Weapon {
     {
         isUsing = true;
         float percent = 0;
-        float velocity = 1 / 0.1f;
+        float velocity = 1 / 0.2f;
 
         Vector3 startRot = transform.localRotation.eulerAngles;
-        float start = startRot.x;
-        float end = start + 90f;
+        float startX = startRot.x;
+        float endX = startX - 90f;
+        float startY = startRot.y;
+        float endY = startY - 180f;
+        float startZ = startRot.z;
+        float endZ = startZ - 90f;
         //Quaternion start = transform.rotation;
         //Quaternion end = transform.rotation * Quaternion.Euler(transform.parent.parent.forward*-90f);
         while(percent<1)
         {
             percent += (velocity * Time.deltaTime);
-            transform.localRotation = Quaternion.Euler(Mathf.Lerp(start, end, percent), startRot.x, startRot.z);
+            transform.localRotation = Quaternion.Euler(Mathf.Lerp(startX, endX, percent), Mathf.Lerp(startY,endY, percent), startRot.z);
             yield return null;
         }
-        while(percent>0)
+        while (percent>0)
         {
-            percent -= (velocity * Time.deltaTime);
-            transform.localRotation = Quaternion.Euler(Mathf.Lerp(start, end, percent), startRot.x, startRot.z);
+            percent -= ((velocity/2) * Time.deltaTime);
+            transform.localRotation = Quaternion.Euler(Mathf.Lerp(startX, endX, percent), Mathf.Lerp(startY, endY, percent), startRot.z);
             yield return null;
         }
 
