@@ -16,21 +16,23 @@ public class Obstacle : LivingEntity {
     void OnEnable()
     {
         MapGenerator room = FindObjectOfType<MapGenerator>().GetComponent<MapGenerator>();
-        OccupyTiles(ref room.openCoords);
+        OccupyTiles(room.tileSize, ref room.openCoords);
     }
 
-    public void OccupyTiles(ref List<Coord> allOpenCoords)
+    public void OccupyTiles(int tileSize, ref List<Coord> allOpenCoords)
     {
-        spawnTile = FindObjectOfType<MapGenerator>().GetComponent<MapGenerator>().GetTileFromPosition(transform.position);
-        occupiedTiles = new List<Coord>();
+
         float yRot = transform.rotation.eulerAngles.y;
         yRot = (yRot <= 180) ? yRot : yRot - 180;
 
         int tilesOnX = (yRot > 50f && yRot < 140) ? yTilesToOccupy : xTilesToOccupy;
         int tilesOnY = (yRot > 50f && yRot < 140) ? xTilesToOccupy : yTilesToOccupy;
 
-        for (int x = spawnTile.x - tilesOnX+1; x < spawnTile.x + tilesOnX; x++)
-            for (int y = spawnTile.y - tilesOnY+1; y < spawnTile.y + tilesOnY; y++)
+        spawnTile = FindObjectOfType<MapGenerator>().GetComponent<MapGenerator>().GetTileFromPosition(transform.position);
+        occupiedTiles = new List<Coord>();
+
+        for (int x = spawnTile.x - tilesOnX+1; x < spawnTile.x + tilesOnX; x+=tileSize)
+            for (int y = spawnTile.y - tilesOnY+1; y < spawnTile.y + tilesOnY; y+=tileSize)
             {
                 Coord coord = new Coord(x, y);
                 allOpenCoords.Remove(coord);

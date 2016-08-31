@@ -15,7 +15,7 @@ public class ObstacleEditor : Editor
         if (DrawDefaultInspector())
         {
             List<Coord> lol = new List<Coord>();
-            obstacle.OccupyTiles(ref lol);
+            obstacle.OccupyTiles(room.tileSize, ref lol);
         }
 
         if (GUILayout.Button("Apply To Prefabs"))
