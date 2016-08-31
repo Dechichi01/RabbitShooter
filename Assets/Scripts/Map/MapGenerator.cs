@@ -13,8 +13,7 @@ public class MapGenerator : Module
     public Transform navmeshFloor;
     public Transform navmeshMaskPrefab;
 
-    public Transform[] obstaclePrefabs;
-    public Obstacle[] furnitures;
+    public PlaceableItem[] furnitures;
 
     List<Vector3> floorVertices;
     List<Vector3> wallVertices;
@@ -27,31 +26,36 @@ public class MapGenerator : Module
     Queue<Coord> shuffledOpenTileCoords;
     Queue<Coord> shuffledTileCoords;
 
+    [HideInInspector]
+    public float tileSize = 3f;
+
     void Awake()
     {
         if (!transform.FindChild("Generated Map"))
-            GenerateMap();
-       
+        {
+            allCoords = new List<Coord>();
+            for (int x = 0; x < map.mapSize.x; x++)
+                for (int y = 0; y < map.mapSize.y; y++)
+                    allCoords.Add(new Coord(x, y));
+
+            openCoords = new List<Coord>(allCoords);
+        }
+
+        GenerateMap();
     }
+
 
     public void GenerateMap()
     {
-        allCoords = new List<Coord>();
-        for (int x = 0; x < map.mapSize.x; x++)
-            for (int y = 0; y < map.mapSize.y; y++)
-                allCoords.Add(new Coord(x, y));
+        if (!Application.isPlaying)
+        {
+            allCoords = new List<Coord>();
+            for (int x = 0; x < map.mapSize.x; x++)
+                for (int y = 0; y < map.mapSize.y; y++)
+                    allCoords.Add(new Coord(x, y));
 
-        openCoords = new List<Coord>(allCoords);
-
-        //Initiate maxMapSize (used by the NavMesh Mask)
-        maxMapSize.x = map.mapSize.x * 1.2f;
-        maxMapSize.y = map.mapSize.y * 1.2f;
-
-        GetComponent<BoxCollider>().size = new Vector3(map.mapSize.x, .05f, map.mapSize.y);
-
-        //Store startPos (in case the map is generated in a position different from (0,0,0)
-        Vector3 startPos = transform.position;
-        transform.position = Vector3.zero;
+            openCoords = new List<Coord>(allCoords);
+        }
 
         string mapHolderName = "Generated Map";
         if (transform.FindChild(mapHolderName))
@@ -72,11 +76,21 @@ public class MapGenerator : Module
         Transform obstacleHolder = new GameObject(obstacleHolderName).transform;
         obstacleHolder.parent = mapHolder;
 
+        //Initiate maxMapSize (used by the NavMesh Mask)
+        maxMapSize.x = map.mapSize.x * 1.2f;
+        maxMapSize.y = map.mapSize.y * 1.2f;
+
+        GetComponent<BoxCollider>().size = new Vector3(map.mapSize.x * tileSize, .05f, map.mapSize.y * tileSize);
+
+        //Store startPos (in case the map is generated in a position different from (0,0,0)
+        Vector3 startPos = transform.position;
+        transform.position = Vector3.zero;
+
+
         GenerateMesh(doorsHolder);
 
         InstantiateFurniture(obstacleHolder);
         shuffledTileCoords = new Queue<Coord>(Utility.ShuffleArray(openCoords.ToArray(), map.seed));
-        InstantiateObstacles(mapHolder);
         InstantiateNavMask(navMaskHolder);
 
         transform.rotation = Quaternion.Euler(0f, (float)map.mapRotation, 0f);
@@ -90,49 +104,13 @@ public class MapGenerator : Module
         for (int i = 0; i < furnitures.Length; i++)
         {
             Vector3 position = CoordToPosition(furnitures[i].spawnTile.x, furnitures[i].spawnTile.y) + furnitures[i].spawnOffset;
-            Obstacle furniture = Instantiate(furnitures[i], position, Quaternion.Euler(furnitures[i].spawnRotation)) as Obstacle;
+            Obstacle furniture = Instantiate(furnitures[i].prefab, position, Quaternion.Euler(furnitures[i].spawnRotation)) as Obstacle;
 
             furniture.transform.parent = mapHolder;
+            furniture.spawnTile = furnitures[i].spawnTile;
             furniture.OccupyTiles(ref openCoords);
         }
 
-    }
-
-    private void InstantiateObstacles(Transform mapHolder)
-    {
-        System.Random prng = new System.Random(map.seed);
-
-        bool[,] obstacleMap = new bool[map.mapSize.x,map.mapSize.y];
-        //allOpenCoords = new List<Coord>(allTileCoords);
-
-        int obstacleCount = (int)(map.mapSize.x * map.mapSize.y * map.obstaclePercent);
-        int currentObstacleCount = 0;
-
-        for (int i = 0; i < obstacleCount; i++)
-        {
-            Coord randomCoord = GetRandomCoord();
-            obstacleMap[ randomCoord.x, randomCoord.y] = true;
-            currentObstacleCount++;
-
-            if (randomCoord != map.mapCentre /*&& MapIsFullyAccessible(obstacleMap, currentObstacleCount)*/)
-            {
-                Vector3 obstaclePosition = CoordToPosition(randomCoord.x, randomCoord.y);
-
-                //Transform newObstacle = Instantiate(obstaclePrefab, obstaclePosition + Vector3.up * 0.5f, Quaternion.Euler(0f, Random.Range(0,360), 0f)) as Transform;
-                Transform newObstacle = Instantiate(obstaclePrefabs[UnityEngine.Random.Range(0, obstaclePrefabs.Length)], obstaclePosition + Vector3.up * 0.25f, Quaternion.identity) as Transform;
-                //newObstacle.localScale = new Vector3(tileSize, tileSize, tileSize);
-                newObstacle.parent = mapHolder;//So it gets destroyed with the rest of the map
-
-                openCoords.Remove(randomCoord);
-            }
-            else
-            {
-                obstacleMap[(int)randomCoord.x, (int)randomCoord.y] = false;
-                currentObstacleCount--;
-            }
-        }
-
-        shuffledOpenTileCoords = new Queue<Coord>(Utility.ShuffleArray(openCoords.ToArray(), map.seed));
     }
 
     public Coord GetRandomCoord()
@@ -144,23 +122,23 @@ public class MapGenerator : Module
 
     private void InstantiateNavMask(Transform mapHolder)
     {
-        Transform maskLeft = Instantiate(navmeshMaskPrefab, Vector3.left * ((map.mapSize.x + maxMapSize.x) / 4f), Quaternion.identity) as Transform;
-        maskLeft.localScale = new Vector3((maxMapSize.x - map.mapSize.x) / 2f, 1, map.mapSize.y);
+        Transform maskLeft = Instantiate(navmeshMaskPrefab, Vector3.left * ((map.mapSize.x + maxMapSize.x) / 4f) * tileSize, Quaternion.identity) as Transform;
         maskLeft.parent = mapHolder;
+        maskLeft.localScale = new Vector3((maxMapSize.x - map.mapSize.x) / 2f, 1, map.mapSize.y) * tileSize;
 
-        Transform maskRight = Instantiate(navmeshMaskPrefab, Vector3.right * ((map.mapSize.x + maxMapSize.x) / 4f), Quaternion.identity) as Transform;
-        maskRight.localScale = new Vector3((maxMapSize.x - map.mapSize.x) / 2f, 1, map.mapSize.y);
+        Transform maskRight = Instantiate(navmeshMaskPrefab, Vector3.right * ((map.mapSize.x + maxMapSize.x) / 4f) * tileSize, Quaternion.identity) as Transform;
         maskRight.parent = mapHolder;
+        maskRight.localScale = new Vector3((maxMapSize.x - map.mapSize.x) / 2f, 1, map.mapSize.y) * tileSize;
 
-        Transform maskTop = Instantiate(navmeshMaskPrefab, Vector3.forward * ((map.mapSize.y + maxMapSize.y) / 4f), Quaternion.identity) as Transform;
-        maskTop.localScale = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.mapSize.y) / 2f);
+        Transform maskTop = Instantiate(navmeshMaskPrefab, Vector3.forward * ((map.mapSize.y + maxMapSize.y) / 4f) * tileSize, Quaternion.identity) as Transform;
         maskTop.parent = mapHolder;
+        maskTop.localScale = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.mapSize.y) / 2f) * tileSize;
 
-        Transform maskBottom = Instantiate(navmeshMaskPrefab, Vector3.back * ((map.mapSize.y + maxMapSize.y) / 4f), Quaternion.identity) as Transform;
-        maskBottom.localScale = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.mapSize.y) / 2f);
+        Transform maskBottom = Instantiate(navmeshMaskPrefab, Vector3.back * ((map.mapSize.y + maxMapSize.y) / 4f) * tileSize, Quaternion.identity) as Transform;
         maskBottom.parent = mapHolder;
+        maskBottom.localScale = new Vector3(maxMapSize.x, 1, (maxMapSize.y - map.mapSize.y) / 2f) * tileSize;
 
-        navmeshFloor.localScale = new Vector3(maxMapSize.x, maxMapSize.y);//Navmesh floor = MaxMapsize
+        navmeshFloor.localScale = new Vector3(maxMapSize.x, maxMapSize.y) * tileSize;//Navmesh floor = MaxMapsize
     }
 
     private void GenerateMesh(Transform doorsHolder)
@@ -468,7 +446,7 @@ public class MapGenerator : Module
 
     public Vector3 CoordToPosition(float x, float y)
     {
-        return transform.position + new Vector3(-map.mapSize.x / 2f + 0.5f + x, 0, -map.mapSize.y / 2f + 0.5f + y);
+        return transform.position + new Vector3(-map.mapSize.x / 2f + 0.5f + x, 0, -map.mapSize.y / 2f + 0.5f + y)*tileSize;
     }
 
     private void SpawnDoor(int[] wallTriangles, Transform doorsHolder, Door[] doorsReplica, int ring, ref int t, ref int doorIndex, int i)
@@ -499,17 +477,13 @@ public class MapGenerator : Module
     }
 
 
-    void OnDrawGizmos()
+    /*void OnDrawGizmos()
     {
-        if (wallVertices != null)
+        for (int i = 0; i < openCoords.Count; i++)
         {
-            Gizmos.color = Color.black;
-            for (int i = 0; i < wallVertices.Count; i++)
-            {
-                Gizmos.DrawSphere(wallVertices[i], 0.1f);
-            }
+            Gizmos.DrawCube(CoordToPosition(openCoords[i].x, openCoords[i].y), Vector3.one/2);
         }
-    }
+    }*/
 
 }
 
@@ -554,7 +528,6 @@ public class Map
     public float wallDepth = 0.5f;
     public float wallHeight = 3.2f;
     [Range(0, 1f)]
-    public float obstaclePercent;
     public int seed;
 
     public Coord mapCentre
@@ -582,4 +555,13 @@ public class Door : IComparable
         else
             throw new ArgumentException("Object is not a Door");
     }
+}
+
+[System.Serializable]
+public class PlaceableItem
+{
+    public Obstacle prefab;
+    public Coord spawnTile;
+    public Vector3 spawnOffset;
+    public Vector3 spawnRotation;
 }

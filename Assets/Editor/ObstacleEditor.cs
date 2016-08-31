@@ -4,7 +4,8 @@ using UnityEditor;
 using System.Collections.Generic;
 
 [CustomEditor(typeof(Obstacle), true)]
-public class ObstacleEditor : Editor {
+public class ObstacleEditor : Editor
+{
 
     public override void OnInspectorGUI()
     {
@@ -23,8 +24,8 @@ public class ObstacleEditor : Editor {
             Object prefab = Resources.Load("Prefabs/" + prefabName);
 
             for (int i = 0; i < room.furnitures.Length; i++)
-                if (room.furnitures[i].gameObject == prefab)
-                    room.furnitures[i] = PrefabUtility.ReplacePrefab(obstacle.gameObject, prefab).GetComponent<Obstacle>();
+                if (room.furnitures[i].prefab.gameObject == prefab)
+                    room.furnitures[i].prefab = PrefabUtility.ReplacePrefab(obstacle.gameObject, prefab).GetComponent<Obstacle>();
 
             room.GenerateMap();
         }

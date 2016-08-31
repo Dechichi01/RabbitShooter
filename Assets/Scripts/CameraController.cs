@@ -31,8 +31,6 @@ public class CameraController : MonoBehaviour
         mapRightEdge = mapGen.transform.position + Vector3.right * mapGen.map.mapSize.x * 0.440f;
         mapLeftEdge = mapGen.transform.position - Vector3.right * mapGen.map.mapSize.x * 0.45f;
 
-        Debug.Log(mapLeftEdge);
-
         if (playerT != null)
         {
             hasTarget = true;

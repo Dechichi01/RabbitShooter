@@ -7,8 +7,6 @@ using System.Collections.Generic;
 public class Obstacle : LivingEntity {
 
     public Coord spawnTile;
-    public Vector3 spawnOffset;
-    public Vector3 spawnRotation;
     public int xTilesToOccupy, yTilesToOccupy;
 
     [HideInInspector]
@@ -16,7 +14,6 @@ public class Obstacle : LivingEntity {
 
     void OnEnable()
     {
-        Debug.Log("Ok");
         MapGenerator room = FindObjectOfType<MapGenerator>().GetComponent<MapGenerator>();
         OccupyTiles(ref room.openCoords);
     }
@@ -24,9 +21,14 @@ public class Obstacle : LivingEntity {
     public void OccupyTiles(ref List<Coord> allOpenCoords)
     {
         occupiedTiles = new List<Coord>();
+        float yRot = transform.rotation.eulerAngles.y;
+        yRot = (yRot <= 180) ? yRot : yRot - 180;
 
-        for (int x = spawnTile.x - xTilesToOccupy + 1; x < spawnTile.x + xTilesToOccupy; x++)
-            for (int y = spawnTile.y - yTilesToOccupy + 1; y < spawnTile.y + yTilesToOccupy; y++)
+        int tilesOnX = (yRot > 50f && yRot < 140) ? yTilesToOccupy : xTilesToOccupy;
+        int tilesOnY = (yRot > 50f && yRot < 140) ? xTilesToOccupy : yTilesToOccupy;
+
+        for (int x = spawnTile.x - tilesOnX + 1; x < spawnTile.x + tilesOnX; x++)
+            for (int y = spawnTile.y - tilesOnY + 1; y < spawnTile.y + tilesOnY; y++)
             {
                 Coord coord = new Coord(x, y);
                 allOpenCoords.Remove(coord);
@@ -41,7 +43,9 @@ public class Obstacle : LivingEntity {
         Gizmos.color = Color.yellow;
         for (int i = 0; i < occupiedTiles.Count; i++)
         {
-            Gizmos.DrawCube(room.CoordToPosition(occupiedTiles[i].x, occupiedTiles[i].y), Vector3.one);
+            //Vector3 pos = transform.position - Vector3.right*occupiedTiles[i].x - Vector3.forward*occupiedTiles[i].y + room.CoordToPosition(spawnTile.x, spawnTile.y);
+            //Gizmos.DrawCube(pos, Vector3.one);
+            Gizmos.DrawCube(room.CoordToPosition(occupiedTiles[i].x, occupiedTiles[i].y), Vector3.one*room.tileSize);
         }
     }
 
