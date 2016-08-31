@@ -5,6 +5,7 @@ using System;
 
 public class MapGenerator : Module
 {
+    public LayerMask obstacleMask;
     public MeshFilter floorMF;
     public MeshFilter wallMF;
 
@@ -20,42 +21,21 @@ public class MapGenerator : Module
 
     public Vector2 maxMapSize;
 
-    List<Coord> allCoords;
     [HideInInspector]
-    public List<Coord> openCoords;
+    public List<Coord> spawnPoints;
     Queue<Coord> shuffledOpenTileCoords;
-    Queue<Coord> shuffledTileCoords;
+    Queue<Coord> shuffledSpawnPoints;
 
     public int tileSize = 5;
 
     void Awake()
     {
-        if (!transform.FindChild("Generated Map"))
-        {
-            allCoords = new List<Coord>();
-            for (int x = 0; x < map.mapSize.x; x+=tileSize)
-                for (int y = 0; y < map.mapSize.y; y+= tileSize)
-                    allCoords.Add(new Coord(x, y));
-
-            openCoords = new List<Coord>(allCoords);
-        }
-
         GenerateMap();
     }
 
 
     public void GenerateMap()
     {
-        if (!Application.isPlaying)
-        {
-            allCoords = new List<Coord>();
-            for (int x = 0; x < map.mapSize.x; x+= tileSize)
-                for (int y = 0; y < map.mapSize.y; y+=tileSize)
-                    allCoords.Add(new Coord(x, y));
-
-            openCoords = new List<Coord>(allCoords);
-        }
-
         string mapHolderName = "Generated Map";
         if (transform.FindChild(mapHolderName))
             DestroyImmediate(transform.FindChild(mapHolderName).gameObject);
@@ -89,8 +69,17 @@ public class MapGenerator : Module
         GenerateMesh(doorsHolder);
 
         InstantiateFurniture(obstacleHolder);
-        shuffledTileCoords = new Queue<Coord>(Utility.ShuffleArray(openCoords.ToArray(), map.seed));
         InstantiateNavMask(navMaskHolder);
+
+        spawnPoints = new List<Coord>();
+        for (int x = 0; x < map.mapSize.x; x += tileSize)
+            for (int y = 0; y < map.mapSize.y; y += tileSize)
+            {
+                if (Physics.OverlapBox(CoordToPosition(x, y), Vector3.one*2, Quaternion.identity, obstacleMask).Length == 0)
+                    spawnPoints.Add(new Coord(x, y));
+            }
+
+        shuffledSpawnPoints = new Queue<Coord>(Utility.ShuffleArray(spawnPoints.ToArray(), map.seed));
 
         transform.rotation = Quaternion.Euler(0f, (float)map.mapRotation, 0f);
 
@@ -106,16 +95,14 @@ public class MapGenerator : Module
             Obstacle furniture = Instantiate(furnitures[i].prefab, position, Quaternion.Euler(furnitures[i].spawnRotation)) as Obstacle;
 
             furniture.transform.parent = mapHolder;
-            furniture.spawnTile = furnitures[i].spawnTile;
-            furniture.OccupyTiles(tileSize, ref openCoords);
         }
 
     }
 
     public Coord GetRandomCoord()
     {
-        Coord randomCoord = shuffledTileCoords.Dequeue();
-        shuffledTileCoords.Enqueue(randomCoord);
+        Coord randomCoord = shuffledSpawnPoints.Dequeue();
+        shuffledSpawnPoints.Enqueue(randomCoord);
         return randomCoord;
     }
 
@@ -492,9 +479,9 @@ public class MapGenerator : Module
 
     void OnDrawGizmos()
     {
-        for (int i = 0; i < openCoords.Count; i++)
+        for (int i = 0; i < spawnPoints.Count; i++)
         {
-            Gizmos.DrawCube(CoordToPosition(openCoords[i].x, openCoords[i].y), Vector3.one/2);
+            Gizmos.DrawCube(CoordToPosition(spawnPoints[i].x, spawnPoints[i].y), Vector3.one/2);
         }
     }
 
