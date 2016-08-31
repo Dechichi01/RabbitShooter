@@ -13,10 +13,19 @@ public class MapGenerator : Module
     public Transform navmeshFloor;
     public Transform navmeshMaskPrefab;
 
+    public Transform[] obstaclePrefabs;
+    public Obstacle[] furnitures;
+
     List<Vector3> floorVertices;
     List<Vector3> wallVertices;
 
     public Vector2 maxMapSize;
+
+    List<Coord> allCoords;
+    [HideInInspector]
+    public List<Coord> openCoords;
+    Queue<Coord> shuffledOpenTileCoords;
+    Queue<Coord> shuffledTileCoords;
 
     void Awake()
     {
@@ -27,6 +36,13 @@ public class MapGenerator : Module
 
     public void GenerateMap()
     {
+        allCoords = new List<Coord>();
+        for (int x = 0; x < map.mapSize.x; x++)
+            for (int y = 0; y < map.mapSize.y; y++)
+                allCoords.Add(new Coord(x, y));
+
+        openCoords = new List<Coord>(allCoords);
+
         //Initiate maxMapSize (used by the NavMesh Mask)
         maxMapSize.x = map.mapSize.x * 1.2f;
         maxMapSize.y = map.mapSize.y * 1.2f;
@@ -52,14 +68,78 @@ public class MapGenerator : Module
         Transform navMaskHolder = new GameObject(navMaskHolderName).transform;
         navMaskHolder.parent = mapHolder;
 
+        string obstacleHolderName = "Obstacles";
+        Transform obstacleHolder = new GameObject(obstacleHolderName).transform;
+        obstacleHolder.parent = mapHolder;
+
         GenerateMesh(doorsHolder);
 
+        InstantiateFurniture(obstacleHolder);
+        shuffledTileCoords = new Queue<Coord>(Utility.ShuffleArray(openCoords.ToArray(), map.seed));
+        InstantiateObstacles(mapHolder);
         InstantiateNavMask(navMaskHolder);
 
         transform.rotation = Quaternion.Euler(0f, (float)map.mapRotation, 0f);
 
         transform.position = startPos;
 
+    }
+
+    private void InstantiateFurniture(Transform mapHolder)
+    {
+        for (int i = 0; i < furnitures.Length; i++)
+        {
+            Vector3 position = CoordToPosition(furnitures[i].spawnTile.x, furnitures[i].spawnTile.y) + furnitures[i].spawnOffset;
+            Obstacle furniture = Instantiate(furnitures[i], position, Quaternion.Euler(furnitures[i].spawnRotation)) as Obstacle;
+
+            furniture.transform.parent = mapHolder;
+            furniture.OccupyTiles(ref openCoords);
+        }
+
+    }
+
+    private void InstantiateObstacles(Transform mapHolder)
+    {
+        System.Random prng = new System.Random(map.seed);
+
+        bool[,] obstacleMap = new bool[map.mapSize.x,map.mapSize.y];
+        //allOpenCoords = new List<Coord>(allTileCoords);
+
+        int obstacleCount = (int)(map.mapSize.x * map.mapSize.y * map.obstaclePercent);
+        int currentObstacleCount = 0;
+
+        for (int i = 0; i < obstacleCount; i++)
+        {
+            Coord randomCoord = GetRandomCoord();
+            obstacleMap[ randomCoord.x, randomCoord.y] = true;
+            currentObstacleCount++;
+
+            if (randomCoord != map.mapCentre /*&& MapIsFullyAccessible(obstacleMap, currentObstacleCount)*/)
+            {
+                Vector3 obstaclePosition = CoordToPosition(randomCoord.x, randomCoord.y);
+
+                //Transform newObstacle = Instantiate(obstaclePrefab, obstaclePosition + Vector3.up * 0.5f, Quaternion.Euler(0f, Random.Range(0,360), 0f)) as Transform;
+                Transform newObstacle = Instantiate(obstaclePrefabs[UnityEngine.Random.Range(0, obstaclePrefabs.Length)], obstaclePosition + Vector3.up * 0.25f, Quaternion.identity) as Transform;
+                //newObstacle.localScale = new Vector3(tileSize, tileSize, tileSize);
+                newObstacle.parent = mapHolder;//So it gets destroyed with the rest of the map
+
+                openCoords.Remove(randomCoord);
+            }
+            else
+            {
+                obstacleMap[(int)randomCoord.x, (int)randomCoord.y] = false;
+                currentObstacleCount--;
+            }
+        }
+
+        shuffledOpenTileCoords = new Queue<Coord>(Utility.ShuffleArray(openCoords.ToArray(), map.seed));
+    }
+
+    public Coord GetRandomCoord()
+    {
+        Coord randomCoord = shuffledTileCoords.Dequeue();
+        shuffledTileCoords.Enqueue(randomCoord);
+        return randomCoord;
     }
 
     private void InstantiateNavMask(Transform mapHolder)
@@ -436,10 +516,10 @@ public class MapGenerator : Module
 [System.Serializable]
 public struct Coord
 {
-    public float x;
-    public float y;
+    public int x;
+    public int y;
 
-    public Coord(float _x, float _y)
+    public Coord(int _x, int _y)
     {
         x = _x;
         y = _y;

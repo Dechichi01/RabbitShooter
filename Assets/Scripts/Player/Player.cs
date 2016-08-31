@@ -75,6 +75,14 @@ public class Player : LivingEntity {
                 break;
     	}
 
+        if (Input.GetKeyDown(KeyCode.Space))
+            weaponManager.Use();
+        if (Input.GetKeyDown(KeyCode.Z))
+            controller.Rotate(new Vector3(0f, -90f, 0f));
+        if (Input.GetKeyDown(KeyCode.X))
+            controller.Rotate(new Vector3(0f, 90f, 0f));
+        if (Input.GetKeyDown(KeyCode.C))
+            weaponManager.EquipGun(weapons[(++currentHoldWeaponIndex) % weapons.Length]);
     }
 
     public override void Die()
