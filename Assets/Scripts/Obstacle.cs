@@ -6,6 +6,7 @@ using System.Collections.Generic;
 [RequireComponent (typeof (NavMeshObstacle))]
 public class Obstacle : LivingEntity {
 
+    [HideInInspector]
     public Coord spawnTile;
     public int xTilesToOccupy, yTilesToOccupy;
 
@@ -20,6 +21,7 @@ public class Obstacle : LivingEntity {
 
     public void OccupyTiles(ref List<Coord> allOpenCoords)
     {
+        spawnTile = FindObjectOfType<MapGenerator>().GetComponent<MapGenerator>().GetTileFromPosition(transform.position);
         occupiedTiles = new List<Coord>();
         float yRot = transform.rotation.eulerAngles.y;
         yRot = (yRot <= 180) ? yRot : yRot - 180;
@@ -27,8 +29,8 @@ public class Obstacle : LivingEntity {
         int tilesOnX = (yRot > 50f && yRot < 140) ? yTilesToOccupy : xTilesToOccupy;
         int tilesOnY = (yRot > 50f && yRot < 140) ? xTilesToOccupy : yTilesToOccupy;
 
-        for (int x = spawnTile.x - tilesOnX + 1; x < spawnTile.x + tilesOnX; x++)
-            for (int y = spawnTile.y - tilesOnY + 1; y < spawnTile.y + tilesOnY; y++)
+        for (int x = spawnTile.x - tilesOnX+1; x < spawnTile.x + tilesOnX; x++)
+            for (int y = spawnTile.y - tilesOnY+1; y < spawnTile.y + tilesOnY; y++)
             {
                 Coord coord = new Coord(x, y);
                 allOpenCoords.Remove(coord);

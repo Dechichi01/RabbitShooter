@@ -27,15 +27,15 @@ public class MapGenerator : Module
     Queue<Coord> shuffledTileCoords;
 
     [HideInInspector]
-    public float tileSize = 3f;
+    public float tileSize = 2f;
 
     void Awake()
     {
         if (!transform.FindChild("Generated Map"))
         {
             allCoords = new List<Coord>();
-            for (int x = 0; x < map.mapSize.x; x++)
-                for (int y = 0; y < map.mapSize.y; y++)
+            for (int x = 0; x < map.mapSize.x; x+=2)
+                for (int y = 0; y < map.mapSize.y; y+=2)
                     allCoords.Add(new Coord(x, y));
 
             openCoords = new List<Coord>(allCoords);
@@ -50,8 +50,8 @@ public class MapGenerator : Module
         if (!Application.isPlaying)
         {
             allCoords = new List<Coord>();
-            for (int x = 0; x < map.mapSize.x; x++)
-                for (int y = 0; y < map.mapSize.y; y++)
+            for (int x = 0; x < map.mapSize.x; x+=3)
+                for (int y = 0; y < map.mapSize.y; y+=3)
                     allCoords.Add(new Coord(x, y));
 
             openCoords = new List<Coord>(allCoords);
@@ -449,6 +449,17 @@ public class MapGenerator : Module
         return transform.position + new Vector3(-map.mapSize.x / 2f + 0.5f + x, 0, -map.mapSize.y / 2f + 0.5f + y)*tileSize;
     }
 
+    public Coord GetTileFromPosition(Vector3 position)
+    {
+        int x = Mathf.RoundToInt(position.x / tileSize + (map.mapSize.x - 1) / 2f);
+        int y = Mathf.RoundToInt(position.z / tileSize + (map.mapSize.y - 1) / 2f);
+
+        x = Mathf.Clamp(x, 0, map.mapSize.x - 1);
+        y = Mathf.Clamp(y, 0, map.mapSize.y - 1);
+
+        return new Coord(x, y);
+    }
+
     private void SpawnDoor(int[] wallTriangles, Transform doorsHolder, Door[] doorsReplica, int ring, ref int t, ref int doorIndex, int i)
     {
         float doorHeight = doorsReplica[doorIndex].doorHeight;
@@ -477,13 +488,13 @@ public class MapGenerator : Module
     }
 
 
-    /*void OnDrawGizmos()
+    void OnDrawGizmos()
     {
         for (int i = 0; i < openCoords.Count; i++)
         {
             Gizmos.DrawCube(CoordToPosition(openCoords[i].x, openCoords[i].y), Vector3.one/2);
         }
-    }*/
+    }
 
 }
 
